@@ -1,0 +1,16 @@
+## Primers used by cutadapt
+## Reads were already trimmed so do not discard them due to missing primers.
+allowMissingPrimers, TRUE
+
+## Parameters that impact DADA2 error models:  use defaults
+NifH_minBits, 0
+
+## Parameters forwarded to dada2::filterAndTrim()
+## SRA read names (not CASAVA) so read ID is in field #1.
+id.field, 1
+truncQ, 16
+maxEE.fwd, 2
+maxEE.rev, 4
+
+## Parameters that impact dada2::mergePairs()
+maxMismatch, 1

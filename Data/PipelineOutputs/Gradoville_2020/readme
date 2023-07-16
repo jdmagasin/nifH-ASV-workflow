@@ -1,0 +1,17 @@
+The pipeline was run separately for each of the 5 fastq maps shown, always using the parameters file
+params.Gradoville_2020.csv.  Each run had its own Data.nobackup output directory with all pipeline
+stages (cutadapt, error model creation, DADA2).  I.e. the organization was:
+
+   Directory                           Includes
+   =========                           ========
+   2019_DNA_Frac_whole_Transition      fastqMap_2019_DNA_Frac_whole_Transition.tsv and the params file
+   2017_RNA_Frac_whole_NPSG            fastqMap_2017_RNA_Frac_whole_NPSG.tsv and the params file
+   2017_DNA_Frac_whole_Transition.tsv  fastqMap_2017_DNA_Frac_whole_Transition.tsv and the params file
+   etc.
+
+For sharing the ASVs on github, it is simpler to provide all 5 result sets as subdirectories within
+the same Data.nobackup/Dada2PipeOutput.
+
+If you want to run the pipeline for each of the 5 data sets, please use separate directories as
+described above.
+

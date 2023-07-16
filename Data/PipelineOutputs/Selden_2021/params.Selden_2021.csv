@@ -1,0 +1,15 @@
+## Primers for cutadapt:  use defaults
+
+## Parameters that impact DADA2 error models
+NifH_minBits, 0
+
+## Parameters forwarded to dada2::filterAndTrim()
+## Non-CASAVA format for read IDs.  ID is in field 1.
+id.field, 1
+truncLen.fwd, 241
+truncLen.rev, 196
+maxEE.fwd, 2
+maxEE.rev, 4
+
+## Parameters that impact dada2::mergePairs()
+maxMismatch, 1

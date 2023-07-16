@@ -1,0 +1,13 @@
+## Primers for cutadapt:  use defaults
+
+## Parameters that impact DADA2 error models
+NifH_minBits, 0
+
+## Parameters forwarded to dada2::filterAndTrim()
+truncLen.fwd, 181
+truncLen.rev, 181
+maxEE.fwd, 2
+maxEE.rev, 4
+
+## Parameters that impact dada2::mergePairs()
+maxMismatch, 1
