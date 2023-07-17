@@ -29,3 +29,12 @@ of the downloaded data sets.  You are free to change them.  Often we found that 
 directory structure as downloaded (e.g. from the Sequencing Read Archive), and we usually put all
 FASTQs in one directory called "RawFastqs".  organizeFastqs.R was then used to create a directory
 hierarchy that reflected each sample's station, nucleic acid type, and size fraction.
+
+
+-----------------
+* StudyMetadata *
+-----------------
+
+This directory has tables of metadata for all studies, mainly from the NCBI Sequencing Read Archive.
+Often there are two tables, one from GrabSeqs and the other downloaded using the SRA web interface.
+The GatherMetadata stage integrates and standardizes the format of all the study metadata.
