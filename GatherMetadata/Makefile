@@ -31,10 +31,10 @@ clean:
 
 
 ## Use the curated/corrected metadata
-studyID_metadata.csv: ../Metadata/data/*
+studyID_metadata.csv: ../Data/StudyMetadata/*
 	@echo ">>>>> Making a list of all the sample metadata tables <<<<<"
 	@echo "This step makes $@"
-	@find ../Metadata/data -type f > allMeta.tmp ; \
+	@find ../Data/StudyMetadata -type f > allMeta.tmp ; \
 	rm -f $@ ; \
 	while read path ; do  \
 	    study="$$(basename $$(dirname $$path))" ; \

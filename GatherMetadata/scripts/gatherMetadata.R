@@ -17,7 +17,7 @@
 ##
 ## SAMPLEIDs must appear only once in a metadata file.  If a source metadata
 ## file has a duplicated SAMPLEID, you will have to fix it by:
-##   - commententing out the duplicates by starting their lines with '#', or
+##   - commenting out the duplicates by starting their lines with '#', or
 ##   - renaming the duplicates by adding _dup1, _dup2, ... to each.
 ## Some of our metadata files have duplicated SAMPLEIDs for metagenomic and
 ## metatranscriptomic samples.  Because we will not use the latter and don't
@@ -203,7 +203,7 @@ ReadMetaTable <- function(fp)
 }
 
 
-## Load all metadata.  As when we prepared the OSM abstrct, the first column
+## Load all metadata.  As when we prepared the OSM abstract, the first column
 ## should be a SAMPLEID and must not be duplicated within any file.  If we
 ## detect duplication, then probably it is not a SAMPLEID (e.g. it could be
 ## station number, date, ...), so reject the entire file.
