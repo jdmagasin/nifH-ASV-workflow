@@ -37,10 +37,10 @@ options(width = 100) # More columns for printing.
 ## Parameters that affect filtering of AUIDs and samples
 ##
 
-MIN_SAMPLE_SIZE = 1000          # Drop samples with fewer than this many reads
-AUID_MIN_SAMPS  = 5             # AUIDs must be in at least this many samples and have
-AUID_MIN_READS  = 25            # at least this many reads in each of those samples
-AUID_ONE_HIT_WONDER_READS = 100 # Also keep AUIDs with >= this many reads >=1 samples
+MIN_SAMPLE_SIZE = 500            # Drop samples with fewer than this many reads
+AUID_MIN_SAMPS  = 2              # AUIDs must be in at least this many samples and have
+AUID_MIN_READS  = 1              # at least this many reads in each of those samples
+AUID_ONE_HIT_WONDER_READS = 1000 # Also keep AUIDs with >= this many reads >=1 samples
 
 RETAIN_CONTAMINANTS = T  # If TRUE, do not drop contaminants. Just report them.
 CONTAM_PCTID = 96        # AUIDs that align (nt) to known contaminants at this %id
