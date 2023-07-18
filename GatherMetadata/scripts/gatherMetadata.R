@@ -3,7 +3,7 @@
 ##
 ## Scrape all wanted information available from all available metadata files
 ## listed in studyID_metadata.csv.  Some values are converted into standard
-## formats e.g. Collection_Date.  Transcriptomic samples are dropped.
+## formats e.g. Collection_Date.
 ##
 ## Important: In the first column of Every metadata file there must be unique
 ## sample identifiers.  The column can be named anything but will be renamed
@@ -12,26 +12,25 @@
 ##     A SAMPLEID must correspond to a specific point in time/space. This is
 ##     required to look up environmental data for the SAMPLEID.  Date, lat/lon,
 ##     and depth recorded for each SAMPLEID in the metadata files is probably
-##     sufficient for looking up envdata. (If we were doing transcriptomics,
-##     then we would also want time of day.)
+##     sufficient for looking up envdata.
 ##
 ## SAMPLEIDs must appear only once in a metadata file.  If a source metadata
 ## file has a duplicated SAMPLEID, you will have to fix it by:
 ##   - commenting out the duplicates by starting their lines with '#', or
 ##   - renaming the duplicates by adding _dup1, _dup2, ... to each.
 ## Some of our metadata files have duplicated SAMPLEIDs for metagenomic and
-## metatranscriptomic samples.  Because we will not use the latter and don't
-## want to take the time to create new SAMPLEIDs, this script drops
-## metatranscriptomic samples (detected in LibrarySource).
+## metatranscriptomic samples (detected in field LibrarySource).  To handle
+## this the script appends _transcriptomic to the sample IDs.  Unfortunately
+## the modified sample IDs cannot be used as-is to index into other tables.
 ##
+
 ## SAMPLEIDs can appear in multiple metadata files. If metadata files share some
 ## columns (e.g. Collection_Date), this script will check simply for consistent
 ## values across metadata files.  A very few fields are put into standard
-## formats before this script does the comparison
-## (e.g. Collection_Date). However, for most fields non-identical values between
-## metadata files will cause the script to report the conflict and abort.
+## formats before this script does the comparison (e.g. Collection_Date).
+## However, for most fields non-identical values between metadata files will
+## cause the script to report the conflict and abort.
 ##
-
 
 cat("Reading studyID_metadata.csv...")
 sidTab <- read.csv('studyID_metadata.csv', row.names=NULL, header=F, comment.char='#')
@@ -133,9 +132,10 @@ Fixup_Collection_Date <- function(dates)
 
 
 ## HACKS!
-##  1. Do not allow transcriptomic samples because various studies have the same
-##     SAMPLEID for metaT/G studies and we don't want to be held up until T
-##     samples can be removed/renamed.
+##  1. Rename transcriptomic samples by adding a "_transcriptomic" to the end of their
+##     SAMPLEID.  Some studies use the same sample ID for their metaT and metaG samples
+##     so this is a simple way to ensure unique SAMPLEIDs.  The modified SAMPLEIDs will
+##     not index into other tables unfortunately, but our focus is on metagenomes.
 ##
 ##  2. Change GENOMIC --> METAGENOMIC in LibrarySource
 ##
@@ -143,23 +143,22 @@ Fixup_Collection_Date <- function(dates)
 ##
 ## Return fixed up mdat.
 ##
-gDroppedMetaT <- c() # HACK!
-RecordDroppedMetaT <- function(x) {
-    gDroppedMetaT <<- union(gDroppedMetaT, as.character(x))
+gMetaT <- c()
+RecordMetaT <- function(x) {
+    gMetaT <<- union(gMetaT, as.character(x))
 }
 HackHandleProblemSamples <- function(mdat)
 {
-    ## Drop transcriptomic
-    idx <- grep('LibrarySource',colnames(mdat),ignore.case=T)
+    ## Modify SAMPLEIDs of transcriptomic, and record the original IDs.
+    idx <- grep('LibrarySource', colnames(mdat), ignore.case=T)
     if (length(idx) > 0) {
         stopifnot(length(idx)==1)
-        idx <- grep('transcriptomic',mdat[,idx],ignore.case=T)
+        idx <- grep('transcriptomic', mdat[,idx], ignore.case=T)
         if (length(idx) > 0) {
-            cat("\tWARNING: Threw out",length(idx),"transcriptomic samples.\n")
-            ##print(mdat[idx,1])
-            RecordDroppedMetaT(mdat[idx,1])
-            mdat <- mdat[-idx,]
-            stopifnot(nrow(mdat) > 0)
+            cat("\tWARNING: Found",length(idx),"transcriptomic samples. ",
+                "Will append _transcriptomic to their sample IDs.\n")
+            RecordMetaT(mdat[idx,1])
+            mdat[idx,1] <- paste0(mdat[idx,1], '_transcriptomic')
         }
     }
 
@@ -235,8 +234,9 @@ rm(idx)
 ##DEBUG: Check that each table's SAMPLEID's look okay.
 ##lapply(metaList, function(m) m[1,'SAMPLEID'])
 
-cat("\nSaving dropped_metatranscriptomic_samples.txt\n")
-writeLines(sort(gDroppedMetaT), "dropped_metatranscriptomic_samples.txt")
+cat("\n\nSaving metatranscriptomic_samples.txt which has the unmodified sample",
+    "IDs for metatranscriptomic samples.\n")
+writeLines(sort(gMetaT), "metatranscriptomic_samples.txt")
 
 ## grep for the fields we want, looping over the tables just loaded.
 x <- lapply(names(metaList),
@@ -263,9 +263,14 @@ metaList <- x
 rm(x)
 
 
-## Next loop adapted from original script used for OSM prep:
-##   Merge all tables. For each SAMPLEID, add all fields seen across all tables.
-##   This allows info for a given SAMPLEID to be in multiple input tables.
+## Merge all tables. For each SAMPLEID, add all fields seen across all tables.
+## This allows info for a given SAMPLEID to be in multiple input tables.
+##   Caveat: If a SAMPLEID appears with and without _transcriptomic, we assume
+##   there two sequencing runs.  Some studies might have multiple tables, one
+##   that labels a sample as genomic (in LibrarySource) and the other which
+##   labels it as transcriptomic.  We cannot detect this annotation error from
+##   real cases where a study has transcriptomic and genomic sequencing runs
+##   that use the same sample ID.
 metaTab <- metaList[[1]]
 if (length(metaList) >= 2) {
     for (i in 2:length(metaList)) {

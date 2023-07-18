@@ -12,8 +12,9 @@
 ##     pipeline but are missing in the metadata SAMPLEIDs.
 ##  -- Metadata SAMPLEIDs were assumed (and required )to be in the first column
 ##     of the metadata files but they were something else (
-##  -- Metatranscriptomic samples were dropped by gatherMetadata.R but could
-##     have been run through the pipeline.
+##  -- Metatranscriptomic samples have _transcriptomic appended to their sample
+##     IDs.  Drop the suffix before trying to find the sample.  (Note that there
+##     could be a metagenomic sample with the same ID but without the suffix.)
 ##
 
 cat("Checking with match() whether AUID sample names (columns) can be looked up in metadata\n",
@@ -22,10 +23,8 @@ cat("Checking with match() whether AUID sample names (columns) can be looked up 
 
 mSampIds <- read.table('metadata.tsv', header=T)$SAMPLEID
 stopifnot(!(table(mSampIds) > 1))
+mSampIds <- unique(sub('_transcriptomic$', '', mSampIds))  # Use original sample ID for metaT's
 
-droppedSamps <- readLines('dropped_metatranscriptomic_samples.txt')
-
-##aSampIds <- colnames(read.table('../GatherAsvs/asv2auid.abundances.tsv.gz', nrows=3))
 aSampIds <- colnames(read.table('../FilterAuids/auid.abundances.filtered.tsv.gz', nrows=3))
 stopifnot(table(aSampIds) == 1)  # uniqueness check
 x <- table( sub('^.+___(.+)$','\\1', aSampIds) )
@@ -37,20 +36,18 @@ if (any(x > 1)) {
 aSampIds <- names(which(x == 1))  # makes aSampIds be just the part after ___
 cat("\n\n")
 
-## Which of the AUID tab samples can be identified in metadata.  Ignore
-## droppedSamps.
+## Which of the AUID tab samples can be identified in metadata.
 cat("Searching...")
 
 ## Switched from grep() to match() b/c some sample names have ".", but if we use
 ## grep(..., fixed=T) then a match of the sample name *within* the meta SAMPLEID
 ## will pass.  Probably don't want to allow that. So match() seems the best
 ## option.
-keptSamps <- setdiff(aSampIds, droppedSamps)
-a2m <- match(keptSamps, mSampIds)  # Exact match. (Takes the first.)
-names(a2m) <- keptSamps
+a2m <- match(aSampIds, mSampIds)  # Exact match. (Takes the first.)
+names(a2m) <- aSampIds
 cat("\n")
 if (any(table(a2m)) > 1) {
-    ## This doesn't happen.  If it does, report the sample names.
+    ## This doesn't happen.**  If it does, report the sample names.
     warning("Some sample names seem to be duplicated in the AUID table, because\n",
             "they map to the same metadata SAMPLEID.\n")
 }
@@ -60,7 +57,6 @@ if (sum(is.na(a2m))) {
     cat("The unmapped sample names are\n")
     print(names(a2m)[is.na(a2m)])
 }
-cat("Note that the checks just above *excluded* samples in dropped_metatranscriptomic_samples.txt.\n")
 
 cat("\n\nPossible reasons the sample names above cannot be found in metadata SAMPLEIDs:\n",
     "\t- Different naming convention used for the sample names that were seen by\n",

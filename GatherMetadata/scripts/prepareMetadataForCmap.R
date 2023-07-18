@@ -9,18 +9,7 @@
 ##  to differently formatted Collection_Date's.
 ##
 
-EXCLUDE_DROPPED = TRUE
-
 metadata <- read.table('metadata.tsv', header=T, check.names=F, stringsAsFactors=T)
-
-if (EXCLUDE_DROPPED) {
-    cat("WILL NOT INCLUDE SAMPLES IN dropped_metatranscriptomic_samples.txt in\n",
-        "the checks done in this script, or in the final metadata.cmap.tsv\n")
-    droppedSamps <- readLines('dropped_metatranscriptomic_samples.txt')
-    metadata <- subset(metadata, ! SAMPLEID %in% droppedSamps)
-    rm(droppedSamps)
-}
-
 
 ## These are the fields that are carefully checked. (A few more are checked only
 ## to see that they always are NA.)
@@ -332,7 +321,11 @@ library(lutz)
 MakeLocalNoonsAsUtc <- function(mtab)
 {
     stopifnot(c('Lat','Lon','Collection_Date') %in% colnames(mtab))
-    ## Get time zones (or NA)
+    ## Get time zones (or NA).  The 'accurate' method requires additional
+    ## libraries.  'fast' will cause a warning to be issued about possibly
+    ## inaccurate tz's near unpopulated areas. However, for meta*g*enomic
+    ## samples being off by 1 hr should have ~no impact on CMAP modeled data.
+    ## For metatranscriptomic samples 'accurate' would be better.
     tzones <- tz_lookup_coords(mtab$Lat, mtab$Lon, method='fast')
     localNoons <- paste(mtab$Collection_Date,"12:00:00")
     ## Magic based on:
@@ -381,10 +374,6 @@ cat("\n\nA total of", length(tot),"rows in the metadata table have\n",
     "to determine which rows/fields need attention.\n\n")
 
 cat("\nWriting metadata.cmap.tsv\n")
-if (EXCLUDE_DROPPED) {
-    cat("As noted above, samples that were in dropped_metatranscriptomic_samples.txt\n",
-        "are excluded. Your CMAP queries will not obtain information for those samples!\n")
-}
 write.table(metadata, 'metadata.cmap.tsv', sep="\t", row.names=F)
 cat("Done!\n")
 quit('no')

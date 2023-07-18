@@ -5,12 +5,16 @@
 ##
 ## Outputs:
 ##  - studyID_metadata.csv     Concatenated metadata tables from all studies
+##
 ##  - metadata.tsv             Cleanup up version of previous.  Just the fields
 ##                             needed, standardized and quality checked.  Only
 ##                             metagenomic samples retained.
-
-##  - dropped_metatranscriptomic_samples.txt   Transcriptomic samples excluded
-##                             from metadata.tsv
+##
+##  - metatranscriptomic_samples.txt   Transcriptomic sample IDs (original).
+##                             In metadata.tsv the IDs have _transcriptomic
+##                             appended to them to ensure that every sample
+##                             ID in the table is unique.
+##
 ##  - metadata.cmap.tsv        Modified version of metadata.tsv with fields
 ##                             formatted for use as CMAP queries.
 ##
@@ -21,7 +25,7 @@
 
 SHELL=/usr/bin/bash
 
-targets=studyID_metadata.csv metadata.tsv metadata.cmap.tsv dropped_metatranscriptomic_samples.txt
+targets=studyID_metadata.csv metadata.tsv metadata.cmap.tsv metatranscriptomic_samples.txt
 
 all: $(targets)
 
@@ -51,9 +55,7 @@ studyID_metadata.csv: ../Data/StudyMetadata/*
 ## transcriptomic samples (saving IDs to a file) and makes some value tweaks to
 ## avoid conflicts when merging tables.  SEE WARNING MESSAGES written to stdout
 ## by the script.
-##  - checkMapAuidTab2MetaTab.R uses dropped_metatranscriptomic_samples.txt so
-##    that it won't complain about samples that were dropped.
-metadata.tsv dropped_metatranscriptomic_samples.txt: studyID_metadata.csv
+metadata.tsv metatranscriptomic_samples.txt: studyID_metadata.csv
 	@echo ">>>>> Merging sample metadata tables <<<<<"
 	@echo "This step makes $@"
 	@scripts/gatherMetadata.R
