@@ -37,4 +37,8 @@ hierarchy that reflected each sample's station, nucleic acid type, and size frac
 
 This directory has tables of metadata for all studies, mainly from the NCBI Sequencing Read Archive.
 Often there are two tables, one from GrabSeqs and the other downloaded using the SRA web interface.
-The GatherMetadata stage integrates and standardizes the format of all the study metadata.
+Occasionally we had to fix errors (e.g. for known metatranscriptomic samples that had LibrarySource
+"METAGENOMIC").
+
+The GatherMetadata stage integrates all study metadata, reports possible errors for manual
+correction, and standardizes the format various fields (eg. dates, coordinates, and UTC time zones).
