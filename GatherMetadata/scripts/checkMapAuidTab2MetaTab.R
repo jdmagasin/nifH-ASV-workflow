@@ -1,5 +1,7 @@
 #!/usr/bin/env Rscript
 
+## Copyright (C) 2023 Jonathan D. Magasin
+
 ## Check whether each sample in the AUID abundance table (column name) can be
 ## mapped to a SAMPLEID in the metadata table.  Recall that AUID table columns
 ## have tag info, then "___", then a sample name as understood/used by the DADA2

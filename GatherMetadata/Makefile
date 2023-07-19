@@ -1,3 +1,4 @@
+## Copyright (C) 2023 Jonathan D. Magasin
 ##
 ## Gather and standardize sample metadata across all studies.  Sample metadata
 ## mainly means sequencing run tables obtained from the SRA.  Scrape for just

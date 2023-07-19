@@ -42,3 +42,6 @@ Occasionally we had to fix errors (e.g. for known metatranscriptomic samples tha
 
 The GatherMetadata stage integrates all study metadata, reports possible errors for manual
 correction, and standardizes the format various fields (eg. dates, coordinates, and UTC time zones).
+
+
+Copyright (C) 2023 Jonathan D. Magasin

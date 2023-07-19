@@ -1,3 +1,4 @@
+## Copyright (C) 2023 Jonathan D. Magasin
 ##
 ## Combine results from previous runs of the DADA2 nifH pipeline: Rename the ASVs to "AUIDs" (to
 ## resolve ASV ID collisions across pipeline runs) and combine the abundance tables.  Before

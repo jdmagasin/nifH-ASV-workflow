@@ -1,5 +1,7 @@
 #!/usr/bin/env Rscript
 
+## Copyright (C) 2023 Jonathan D. Magasin
+
 ##
 ## Prepare metadata so that it can be used to query CMAP.
 ##  - Standardize / correct some fields:  Collection_Date*

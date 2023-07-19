@@ -27,3 +27,6 @@ Here I am using a BASH shell (recommended).  It is critical that the DADA2_nifH 
 
 Please see documentation at the top of each Makefile for an overview of the stage.
 
+
+***
+_Copyright (C) 2023 Jonathan D. Magasin_

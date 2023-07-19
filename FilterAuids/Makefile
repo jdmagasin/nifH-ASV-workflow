@@ -1,3 +1,4 @@
+## Copyright (C) 2023 Jonathan D. Magasin
 ##
 ## First, check the AUIDs for possible contaminants and compare the AUIDs
 ## against positive and negative nifH examples in GenBank as of 2020, classified

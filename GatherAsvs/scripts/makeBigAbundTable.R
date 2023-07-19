@@ -1,5 +1,7 @@
 #!/bin/env Rscript
 
+## Copyright (C) 2023 Jonathan D. Magasin
+
 ##
 ## Creates one big abundance table, asv2auid.abundances.tsv, which has ASV counts
 ## for all the studies.  Inputs are the AUID abundance tables that were created

@@ -1,4 +1,6 @@
 #!/bin/env Rscript
+
+## Copyright (C) 2023 Jonathan D. Magasin
 ##
 ## Make a big table of ASV annotation w.r.t. ARB2017, Genomes879, and CART.
 ## Takes the best hit (by E-value) for the first two.  For ARB2017 hits that do

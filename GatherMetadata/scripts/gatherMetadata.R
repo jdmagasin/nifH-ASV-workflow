@@ -1,5 +1,7 @@
 #!/usr/bin/env Rscript
 
+## Copyright (C) 2023 Jonathan D. Magasin
+
 ##
 ## Scrape all wanted information available from all available metadata files
 ## listed in studyID_metadata.csv.  Some values are converted into standard

@@ -1,3 +1,4 @@
+## Copyright (C) 2023 Jonathan D. Magasin
 ##
 ## Annotate ASVs from stage FilterAuids using three tools that are included in the
 ## DADA2 nifH pipeline's "scripts.ancillary/Annotation" directory:

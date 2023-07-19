@@ -1,5 +1,7 @@
 #!/usr/bin/bash
 
+## Copyright (C) 2023 Jonathan D. Magasin
+
 ## Identify chimeras using uchime3_denovo (via my post DADA2 pipeline script).
 ## Creates replacement ASV fasta files with just the non-chimeras.  Each fasta
 ## includes as part of its name the tag from the INPUTTABLE.
