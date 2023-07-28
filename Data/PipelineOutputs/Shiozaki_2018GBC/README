@@ -25,13 +25,13 @@ To run the data through our pipeline we use the following approach:
      Here are the shell commands to do this:
          cd Normal
          organizeFastqs.R ../fastqMap.Shiozaki_2018GBC.tsv    # makes LinksToFastqs
-	 run_DADA2_pipeline.sh params.Shiozaki_2018GBC.normal.csv &> log.normal.txt
+         run_DADA2_pipeline.sh params.Shiozaki_2018GBC.normal.csv &> log.normal.txt
 
   2. Run the pipeline the with the forward and reverse primers **swapped**.
          cd Swapped
          organizeFastqs.R ../fastqMap.Shiozaki_2018GBC.tsv
-	 run_DADA2_pipeline.sh params.Shiozaki_2018GBC.swapped.csv &> log.swapped.txt
-	 
+         run_DADA2_pipeline.sh params.Shiozaki_2018GBC.swapped.csv &> log.swapped.txt
+         
      Because the pipeline tells cutadapt to drop read pairs that are missing the primers, run #1
      will drop the reads that have nifH ligated in the wrong (i.e. reverse complement of nifH)
      orientation, and run #2 will drop reads that have nifH in the normal orientation.
@@ -43,7 +43,7 @@ To run the data through our pipeline we use the following approach:
 
       The shell command to do this is:
          ../../../scripts/MixedOrientationSeqLibs/multiCombineNormalAndSwapped.sh > log.combineNormalAndSwapped.txt
-	 
+         
       This will produce asvs.noChimera.combined.{RNA,DNA}.{fasta,tsv} as well as dendrograms to
       check whether each sample's Normal and Swapped compositions are similar (clustering the
       samples based on Bray-Curtis dissimilarity).
