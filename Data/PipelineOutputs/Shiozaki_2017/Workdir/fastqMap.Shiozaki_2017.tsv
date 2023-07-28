@@ -1,0 +1,56 @@
+## Paths are relative so that this file can be used within Normal and Swapped
+## which will have their own LinksToFastqs.
+../RawFastqs/DRR075661_1.fastq.gz	DNA	Frac_0.2	KH_14_3_St02_DNA
+../RawFastqs/DRR075661_2.fastq.gz	DNA	Frac_0.2	KH_14_3_St02_DNA
+
+../RawFastqs/DRR075662_1.fastq.gz	DNA	Frac_0.2	KH_14_3_St03_DNA
+../RawFastqs/DRR075662_2.fastq.gz	DNA	Frac_0.2	KH_14_3_St03_DNA
+
+../RawFastqs/DRR075663_1.fastq.gz	RNA	Frac_0.2	KH_14_3_St03day_cDNA
+../RawFastqs/DRR075663_2.fastq.gz	RNA	Frac_0.2	KH_14_3_St03day_cDNA
+
+../RawFastqs/DRR075664_1.fastq.gz	DNA	Frac_0.2	KH_14_3_St04_DNA
+../RawFastqs/DRR075664_2.fastq.gz	DNA	Frac_0.2	KH_14_3_St04_DNA
+../RawFastqs/DRR075665_1.fastq.gz	RNA	Frac_0.2	KH_14_3_St04day_cDNA
+../RawFastqs/DRR075665_2.fastq.gz	RNA	Frac_0.2	KH_14_3_St04day_cDNA
+../RawFastqs/DRR075666_1.fastq.gz	RNA	Frac_0.2	KH_14_3_St04night_cDNA
+../RawFastqs/DRR075666_2.fastq.gz	RNA	Frac_0.2	KH_14_3_St04night_cDNA
+
+../RawFastqs/DRR075667_1.fastq.gz	DNA	Frac_0.2	KH_14_3_St05_DNA
+../RawFastqs/DRR075667_2.fastq.gz	DNA	Frac_0.2	KH_14_3_St05_DNA
+../RawFastqs/DRR075668_1.fastq.gz	RNA	Frac_0.2	KH_14_3_St05day_cDNA
+../RawFastqs/DRR075668_2.fastq.gz	RNA	Frac_0.2	KH_14_3_St05day_cDNA
+../RawFastqs/DRR075669_1.fastq.gz	RNA	Frac_0.2	KH_14_3_St05night_cDNA
+../RawFastqs/DRR075669_2.fastq.gz	RNA	Frac_0.2	KH_14_3_St05night_cDNA
+
+../RawFastqs/DRR075670_1.fastq.gz	DNA	Frac_0.2	KH_14_3_St06_DNA
+../RawFastqs/DRR075670_2.fastq.gz	DNA	Frac_0.2	KH_14_3_St06_DNA
+../RawFastqs/DRR075671_1.fastq.gz	RNA	Frac_0.2	KH_14_3_St06day_cDNA
+../RawFastqs/DRR075671_2.fastq.gz	RNA	Frac_0.2	KH_14_3_St06day_cDNA
+../RawFastqs/DRR075672_1.fastq.gz	RNA	Frac_0.2	KH_14_3_St06night_cDNA
+../RawFastqs/DRR075672_2.fastq.gz	RNA	Frac_0.2	KH_14_3_St06night_cDNA
+
+../RawFastqs/DRR075673_1.fastq.gz	DNA	Frac_0.2	KH_14_3_St07_DNA
+../RawFastqs/DRR075673_2.fastq.gz	DNA	Frac_0.2	KH_14_3_St07_DNA
+../RawFastqs/DRR075674_1.fastq.gz	RNA	Frac_0.2	KH_14_3_St07day_cDNA
+../RawFastqs/DRR075674_2.fastq.gz	RNA	Frac_0.2	KH_14_3_St07day_cDNA
+../RawFastqs/DRR075675_1.fastq.gz	RNA	Frac_0.2	KH_14_3_St07night_cDNA
+../RawFastqs/DRR075675_2.fastq.gz	RNA	Frac_0.2	KH_14_3_St07night_cDNA
+
+../RawFastqs/DRR075654_1.fastq.gz	DNA	Frac_0.2	KH_14_3_St08_DNA
+../RawFastqs/DRR075654_2.fastq.gz	DNA	Frac_0.2	KH_14_3_St08_DNA
+../RawFastqs/DRR075655_1.fastq.gz	RNA	Frac_0.2	KH_14_3_St08day_cDNA
+../RawFastqs/DRR075655_2.fastq.gz	RNA	Frac_0.2	KH_14_3_St08day_cDNA
+../RawFastqs/DRR075656_1.fastq.gz	RNA	Frac_0.2	KH_14_3_St08night_cDNA
+../RawFastqs/DRR075656_2.fastq.gz	RNA	Frac_0.2	KH_14_3_St08night_cDNA
+
+../RawFastqs/DRR075657_1.fastq.gz	DNA	Frac_0.2	KH_14_3_St09_DNA
+../RawFastqs/DRR075657_2.fastq.gz	DNA	Frac_0.2	KH_14_3_St09_DNA
+../RawFastqs/DRR075658_1.fastq.gz	RNA	Frac_0.2	KH_14_3_St09day_cDNA
+../RawFastqs/DRR075658_2.fastq.gz	RNA	Frac_0.2	KH_14_3_St09day_cDNA
+
+../RawFastqs/DRR075659_1.fastq.gz	RNA	Frac_0.2	KH_14_3_St11day_cDNA
+../RawFastqs/DRR075659_2.fastq.gz	RNA	Frac_0.2	KH_14_3_St11day_cDNA
+
+../RawFastqs/DRR075660_1.fastq.gz	RNA	Frac_0.2	KH_14_3_St13day_cDNA
+../RawFastqs/DRR075660_2.fastq.gz	RNA	Frac_0.2	KH_14_3_St13day_cDNA

@@ -1,0 +1,55 @@
+####################################################################################################
+## Pipeline processing for Shiozaki_2017 to handle mixed-orientation sequencing libraries
+####################################################################################################
+
+NifH amplicons occur in both orientations in the FASTQs for this data set, i.e. in the forward
+FASTQs about half the amplicons are nifH and half are the reverse complement, and similar for the R2
+FASTQs.  Clearly these sequencing libaries were prepared by ligating the amplicons (in either
+orientation) to the Illumina adapters, as described here:
+    https://seekdeep.brown.edu/illumina_paired_info.html
+
+Consequently a special process was used for this study to produce the final ASV results, which are
+in the asv.noChimera.combined.* files.
+
+
+-------------------------------------
+How ASVs were prepared for this study
+-------------------------------------
+
+To run the data through our pipeline we use the following approach:
+
+  0. Download the data from the SRA and store the FASTQs in RawFastqs.  You can do this with
+     fastq-dump.
+  
+  1. Run the pipeline the "normal" way using the standard nifH1-4 primers.
+     Here are the shell commands to do this:
+         cd Normal
+         organizeFastqs.R ../fastqMap.Shiozaki_2017.tsv    # makes LinksToFastqs
+	 run_DADA2_pipeline.sh params.Shiozaki_2017.normal.csv &> log.normal.txt
+
+  2. Run the pipeline the with the forward and reverse primers **swapped**.
+         cd Swapped
+         organizeFastqs.R ../fastqMap.Shiozaki_2017.tsv
+	 run_DADA2_pipeline.sh params.Shiozaki_2017.swapped.csv &> log.swapped.txt
+	 
+     Because the pipeline tells cutadapt to drop read pairs that are missing the primers, run #1
+     will drop the reads that have nifH ligated in the wrong (i.e. reverse complement of nifH)
+     orientation, and run #2 will drop reads that have nifH in the normal orientation.
+     
+   3. Combine the ASVs from #1 and #2 using the script.
+       + FASTAs:  reverse complement the ASVs from #2.
+       + Abundance tables: For each sample (a column in the abundance table) the counts for each ASV
+         (in the Normal output) and its reverse complement (in the Swapped output) are summed.
+
+      The shell command to do this is:
+         ../../../scripts/MixedOrientationSeqLibs/multiCombineNormalAndSwapped.sh > log.combineNormalAndSwapped.txt
+	 
+      This will produce asvs.noChimera.combined.{RNA,DNA}.{fasta,tsv} as well as dendrograms to
+      check whether each sample's Normal and Swapped compositions are similar (clustering the
+      samples based on Bray-Curtis dissimilarity).
+
+
+Note: We rejected the idea of creating new FASTQs in which the backwards nifH were corrected by
+reverse complementing. The problem with this approach is that it would move the downstream bases,
+with substantially degraded quality, to the front of the corrected reads, which would impact DADA2
+error models and ASVs.
