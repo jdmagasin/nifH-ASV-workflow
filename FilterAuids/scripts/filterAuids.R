@@ -338,6 +338,8 @@ cat("Impacts of each filter step on reads and ASVs:\n")
 row.names(gFilterStages) <- NULL
 print(gFilterStages)
 cat("\n")
+## Useful to have this for summary stats/plots.
+write.table(gFilterStages, 'filterAuids_byStages.tsv', quote=FALSE, sep="\t")
 
 cat("Writing out", dim2desc(dim(atab)), "abundance table",FOUT,"...")
 gcon <- gzfile(FOUT, "wb")
