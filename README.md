@@ -21,11 +21,12 @@ Each of the post-pipeline stages 1 through 6 can be run -- in order -- by enteri
 
 ```bash session
 (base) [jmagasin@thalassa]$ conda activate DADA2_nifH
-(DADA2_nifH) [jmagasin@thalassa]$ cd GatherAsvs
-(DADA2_nifH) [jmagasin@thalassa]$ make &> log.18July2023.txt &
+(DADA2_nifH) [jmagasin@thalassa]$ conda activate --stack nifH_ASV_workflow
+(nifH_ASV_workflow) [jmagasin@thalassa]$ cd GatherAsvs
+(nifH_ASV_workflow) [jmagasin@thalassa]$ make &> log.18July2023.txt &
 ```
 
-Here I am using a BASH shell (recommended).  It is critical that the DADA2_nifH environment was activated sometime before running the stage.  The active environment is shown in parentheses at the start of the prompt.  Finally, I make the stage, saving the Makefile messages to a log file.  I run the process in the background (the trailing &) because most stages take at least a few minutes to complete.
+Here I am using a BASH shell (recommended).  It is critical that both the DADA2_nifH and nifH_ASV_workflow environments were activated sometime before running the stage.  The most recently activated environment is shown in parentheses at the start of the prompt.  On the fourth line, I make the GatherAsvs stage and save the Makefile messages to a log file.  Most stages take at least a few minutes to complete so I run them in the background (the trailing &).
 
 Please see documentation at the top of each Makefile for an overview of the stage.
 
