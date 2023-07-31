@@ -11,8 +11,7 @@ the DADA2_nifH conda environment.
 
 In a shell (BASH recommended) do the following to create nifH_ASV_workflow:
 
-    conda create environment_nifH_ASV_workflow.yml
-
+    conda env create --file environment_nifH_ASV_workflow.yml
 
 When you want to use the workflow, you must activate both DADA2_nifH and
 nifH_ASV_workflow as follows:
