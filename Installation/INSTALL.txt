@@ -1,0 +1,24 @@
+################################################################################
+#################### Installation of the nifH ASV workflow #####################
+################################################################################
+
+Copyright (C) 2023 Jonathan D. Magasin
+
+The workflow requires several external tools which we will install in a new
+conda environment called nifH_ASV_workflow.  You should have already installed
+miniconda, most likely when you installed the DADA2 nifH pipeline and created
+the DADA2_nifH conda environment.
+
+In a shell (BASH recommended) do the following to create nifH_ASV_workflow:
+
+    conda create environment_nifH_ASV_workflow.yml
+
+
+When you want to use the workflow, you must activate both DADA2_nifH and
+nifH_ASV_workflow as follows:
+
+    conda activate DADA2_nifH
+    conda activate --stack nifH_ASV_workflow
+
+Although the shell prompt will change to "(nifH_ASV_workflow)", tools supplied
+by both environments will be available.
