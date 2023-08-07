@@ -32,4 +32,4 @@ Please see documentation at the top of each Makefile for an overview of the stag
 
 
 ***
-_Copyright (C) 2023 Jonathan D. Magasin_
+_Copyright (C) 2023 Michael B. Morando and Jonathan D. Magasin_
