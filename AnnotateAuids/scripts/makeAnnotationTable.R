@@ -2,37 +2,42 @@
 
 ## Copyright (C) 2023 Jonathan D. Magasin
 ##
-## Make a big table of ASV annotation w.r.t. ARB2017, Genomes879, and CART.
-## Takes the best hit (by E-value) for the first two.  For ARB2017 hits that do
-## not have useful annotation, try to find an equally good and informative hit.
-##  -- Unfortunately this didn't help.  Rather than 'equally good' perhaps try
-##     hits with slightly worse E-values...
+## Make a big table of ASV annotation with respect to several references:
+##  - ARB 2017:  Zehr Lab nifH ARB database as of 2017.
+##  - Genomes879: Genomes from 879 diazotrophs
+##  - Marine diazotrophs nifH DB: Small DB with cyano and noncyano diazotrophs, some assembled from
+##    metagenomic data.
+##  - CART:  NifH cluster classifier by Frank et 2016
+##
+## The first 3 tables are from BLAST searches; take the best hit (by E-value). For ARB2017 hits that
+## lack useful annotation, try to find an equally good and informative hit.
+##  -- Unfortunately this didn't help.  Rather than 'equally good' perhaps try hits with slightly
+##     worse E-values...
 ##
 usageStr <- "
-makeAnnotationTable.R  <ARB2017 blast .tab>  <genome 879 .tab>  <CART clusters .map>
+makeAnnotationTable.R  <ARB2017 .tab>  <genome 879 .tab>  <marine diazo .tab>  <CART clusters .map>
 
-Input:  Three annotation files as described above. The first two inputs are tabular
-        blast results (tab separated columns).  The CART input is a '.map' file but
-        uses commas to separate columns.
+Input:  Four annotation files listed above. The first three inputs are tabular BLAST results (tab-
+        separated columns).  The CART input is a '.map' file but uses commas to separate columns.
 
-Output: auids.annot.tsv   Table with annotation, %id, and E-values from each
-                          of ARB2017, Genomes879, and CART.  If the resource
-                          had no annotation, NA will appear.
-                          Also tack on taxonomy for the ARB2017 hit, now that
-                          we have Annotation/genome879_acc_taxstring.txt
+Output: auids.annot.tsv   Table with annotation based on BLAST searches of ARB2017, Genomes879, and
+                          the marine diazotroph DB, including %id and E-values.  NifH classification
+                          by CART is also included.  NA appears if no annotation was found (at the
+                          cut offs you used). For the ARB2017 and diazotroph DB hits, taxonomy
+                          information is included.
 "
 
 ##
 ## Get annotation file names
 ##
-annotFiles <- commandArgs(T)[c(1,2,3)]
+annotFiles <- commandArgs(T)[c(1:4)]
 idx <- which(sapply(annotFiles, file.exists))
-if (length(idx) != 3) {
+if (length(idx) != 4) {
     cat("\nError: Missing input file(s)",annotFiles[-idx],"\n")
     cat(usageStr)
     stop("Aborting.")
 }
-names(annotFiles) <- c('ARB2017','Genomes879','CART')
+names(annotFiles) <- c('ARB2017','Genomes879','MarineDiazo','CART')
 
 
 ##
@@ -50,17 +55,23 @@ names(annot) <- names(annotFiles)
 
 blastHeader <- c('AUID', 'subject','pid','alen','mismatch','gapopen',
                  'q.start','q.end','s.start','s.end','evalue','bits')
-colnames(annot$ARB2017)    <- blastHeader
-colnames(annot$Genomes879) <- blastHeader
-colnames(annot$CART)    <- c('AUID', 'cluster','subcluster')
+colnames(annot$ARB2017)     <- blastHeader
+colnames(annot$Genomes879)  <- blastHeader
+colnames(annot$MarineDiazo) <- blastHeader
+colnames(annot$CART)        <- c('AUID', 'cluster','subcluster')
 
-cat("Loading Genomes879 taxomomy map...\n")
-## FIXME: Hack! Is there no simple way (without installing a new package) to
-## get the location of the executing script?! (Alongside of which g879 acc file.)
-g879taxPath <- file.path('./scripts','genome879_acc_taxstring.txt')
+cat("Loading Genomes879 taxomomy map...")
+g879taxPath <- file.path('./data','genome879_acc_taxstring.txt')
 g879taxa <- read.table(g879taxPath, header=T, sep="\t")
 ## Next line shows that NA appears for no field in the G879 table, except 'kingdom'
 ## apply(g879taxa,2,function(x) sum(is.na(x)))
+cat("done.\n")
+
+cat("Loading marine cyano and NCD sequence information...")
+cyanoNCDtaxPath <- file.path('./data','Marine_NCD_cyano_nifH',
+                             'Marine_NCD_cyano_refsequences.txt')
+cyanoNCDtaxa <- read.table(cyanoNCDtaxPath, header=T, sep="\t")
+cat("done.\n")
 
 bestHits <- list()
 
@@ -120,7 +131,7 @@ df <- merge(x = bestHits$ARB2017, y = bestHits$Genomes879, by='AUID', all=T)
 colnames(df) <- c('AUID',
                   'ARB2017.id',   'ARB2017.pctId',   'ARB2017.alen',   'ARB2017.evalue',
                   'Genomes879.id','Genomes879.pctId','Genomes879.alen','Genomes879.evalue')
-stopifnot(setequal(df$AUID, union(bestHits$ARB2017$AUID, bestHits$Genomes879$AUID)))
+stopifnot(setequal(df$AUID, c(bestHits$ARB2017$AUID, bestHits$Genomes879$AUID)))
 
 ## For top Genomes879 hits, replace the id (which is an ARB name apparently)
 ## with the genus_species.  Also tack on taxonomic info.
@@ -145,10 +156,32 @@ df[!is.na(idx),'Genomes879.tax'] <- x
 ## from CART but cluster 3 for the G879 hit.
 ## df[!is.na(idx),'TEMPCLUST'] <- sub('','',g879taxa[idx[!is.na(idx)],'nifHCluster'])
 
-## And not add CART annotation.
+
+##
+## Marine cyano/NCD nifH DB
+##
+auids <- unique(annot$MarineDiazo$AUID)
+bestHitsIdx <- match(auids, annot$MarineDiazo$AUID)
+bestHits$MarineDiazo <- annot$MarineDiazo[bestHitsIdx,c('AUID','subject','pid','alen','evalue')]
+
+## Tack on 'description' from the annotation companion to the FASTA
+mdat <- bestHits$MarineDiazo
+idx <- match(mdat$subject, cyanoNCDtaxa$seqID)
+stopifnot(!is.na(idx))  # If trips, then the FASTA and annotation are out of sync.
+mdat$description <- cyanoNCDtaxa[idx,'description']
+
+## Merge with the ARB and G879 blast annotations
+colnames(mdat) <- c('AUID', paste0('MarineDiazo.', colnames(mdat)[-1]))
+df <- merge(x = df, y = mdat, by='AUID', all=T)
+stopifnot(setequal(df$AUID, c(bestHits$ARB2017$AUID, bestHits$Genomes879$AUID,
+                              bestHits$MarineDiazo$AUID)))
+
+##
+## And now add CART annotation.
+##
 df <- merge(x = df, y = annot$CART, by='AUID', all=T)
-stopifnot(setequal(df$AUID,
-                    union(union(bestHits$ARB2017$AUID, bestHits$Genomes879$AUID), annot$CART$AUID)))
+stopifnot(setequal(df$AUID, c(bestHits$ARB2017$AUID, bestHits$Genomes879$AUID,
+                              bestHits$MarineDiazo$AUID, annot$CART$AUID)))
 
 ofile <- "auids.annot.tsv"
 cat("Writing out the big annotation table",ofile,"\n")

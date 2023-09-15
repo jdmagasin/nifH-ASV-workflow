@@ -9,14 +9,20 @@
 ##                              classification and regression tree (CART) approach
 ##                              of Frank et al. 2016.
 ##
-## This Makefile runs each of the three annotation tools and then stitches together
-## all the results into auids.annot.tsv, using scripts/makeAnnotationTable.R
+## Also search for the ASVs in a DB with 267 nifH sequences from cyanobacteria
+## and NCDs. Forty-four of these nifH are from oligotyping, 38 from metagenome
+## assembly.
+##
+## This Makefile runs each of the annotation tools, then searches the cyano /
+## NCD DB, and then stitches together all the results into auids.annot.tsv,
+## using scripts/makeAnnotationTable.R
 ##
 ## Usage:
 ##    make                # Generate all annotation types.  Make auids.annot.tsv
 ##    make ARB2017        #   Do just the blastn against ARB 2017
 ##    make Genome879      #   Do just the blastx against Genome879
 ##    make Clusters       #   Do just the nifH cluster classifications
+##    make NCD_cyano      #   Do just the blastn against 267 NCD and cyano ref nifH
 ##
 ##    make clean          # Remove auids.annot.tsv
 ##    make superclean     # Remove auids.annot.tsv and all annotation output dirs.
@@ -57,6 +63,18 @@ GENOME879_OUTS=$(addprefix $(GENOME879_DIR)/, blastxGenome879.$(GENOME879_DESC).
 GENOME879_TAB=$(word 1, $(GENOME879_OUTS))
 
 
+## Marine NCD and cyanobacteria nifH reference sequences (~267 total)
+NCDCYANO_DIR=Marine_NCD_cyano_nifH
+NCDCYANO_LOG=log.marine_NCD_cyano.txt
+NCDCYANO_FASTA=$(shell realpath data/Marine_NCD_cyano_nifH/Marine_NCD_cyano_refsequences.fasta.gz)
+NCDCYANO_PCTID=97
+NCDCYANO_QRYCVG=90
+NCDCYANO_DESC=$(NCDCYANO_PCTID)pid.$(NCDCYANO_QRYCVG)cvg
+NCDCYANO_TAB=$(addprefix $(NCDCYANO_DIR)/, blastn_NCD_cyano.$(NCDCYANO_DESC).tab)
+NCDCYANO_ALN=$(addprefix $(NCDCYANO_DIR)/, blastn_NCD_cyano.$(NCDCYANO_DESC).aln.gz)
+NCDCYANO_OUTS=$(NCDCYANO_TAB) $(NCDCYANO_ALN)
+
+
 ## NifH clusters
 NIFHCLUST_DIR=Classify_NifH_Clusters
 NIFHCLUST_LOG=log.nifH_clusters.txt
@@ -64,6 +82,7 @@ NIFHCLUST_OUTS=$(addprefix $(NIFHCLUST_DIR)/, auid.filtered.clusters.map auid.fi
 NIFHCLUST_MAP=$(word 1, $(NIFHCLUST_OUTS))
 
 
+## Marine NCD and cyanobacteria nifH reference sequences (~267 total)
 all: $(ANNOT_TAB)
 
 clean:
@@ -73,7 +92,7 @@ clean:
 superclean:
 	@echo "Removing $(ANNOT_TAB) and all annotation working directories."
 	@if [ -f "$(ANNOT_TAB)" ] ; then rm "$(ANNOT_TAB)" ; fi
-	@for x in $(ARB2017_DIR) $(GENOME879_DIR) $(NIFHCLUST_DIR) ; do \
+	@for x in $(ARB2017_DIR) $(GENOME879_DIR) $(NIFHCLUST_DIR) $(NCDCYANO_OUTS); do \
 	    if [ -d "$$x" ] ; then rm -r "$$x"; fi \
 	done
 
@@ -83,11 +102,13 @@ Genome879: $(GENOME879_OUTS)
 
 Clusters : $(NIFHCLUST_OUTS)
 
+NCD_cyano: $(NCDCYANO_OUTS)
+
 
 ## Note the use of the cluster .map file.
-$(ANNOT_TAB): $(ARB2017_OUTS) $(GENOME879_OUTS) $(NIFHCLUST_OUTS)
+$(ANNOT_TAB): $(ARB2017_OUTS) $(GENOME879_OUTS) $(NCDCYANO_OUTS) $(NIFHCLUST_OUTS)
 	@echo ">>>>> Combining all annotation into one table $(ANNOT_TAB) <<<<<"
-	@scripts/makeAnnotationTable.R $(ARB2017_TAB) $(GENOME879_TAB) $(NIFHCLUST_MAP)
+	@scripts/makeAnnotationTable.R $(ARB2017_TAB) $(GENOME879_TAB) $(NCDCYANO_TAB) $(NIFHCLUST_MAP)
 	@echo ">>>>> Finished combining annotation <<<<<"
 	@echo
 
@@ -116,10 +137,31 @@ $(NIFHCLUST_OUTS) &: $(AUID_FASTA)
 	@echo ">>>>> Assigning nifH clusters to the AUIDs (method: Frank et al. 2106) <<<<<"
 	@echo "Once completed, see log file in $(NIFHCLUST_DIR) in particular table at end."
 	@echo "Main outputs are $(NIFHCLUST_OUTS)"
-	@mkdir $(NIFHCLUST_DIR)_tmp ; \
+	@mkdir -p $(NIFHCLUST_DIR)_tmp ; \
 	cd $(NIFHCLUST_DIR)_tmp ; \
 	$(ASSIGNNIFHCLUSTERS) $(AUID_FASTA) &> $(NIFHCLUST_LOG) ; \
 	cd .. ; \
 	mv $(NIFHCLUST_DIR)_tmp $(NIFHCLUST_DIR)
 	@echo ">>>>> Finished nifH cluster assignments <<<<<"
+	@echo
+
+
+## Make the DB, then search and save as ASN.1. Then create tabular and alignment outputs.
+$(NCDCYANO_OUTS) &: $(AUID_FASTA) $(NCDCYANO_FASTA)
+	@echo ">>>>> Searching AUIDs against additional reference nifH from cyanos and NCDs <<<<<"
+	@mkdir -p $(NCDCYANO_DIR) ; \
+	cd $(NCDCYANO_DIR) ; \
+	echo "Making database" ; \
+	cat $(NCDCYANO_FASTA) | gunzip \
+	  | makeblastdb -dbtype nucl -title NCD_cyano_nifH -out NCD_cyano_nifH ; \
+	echo "Searching database" ; \
+	blastn -db NCD_cyano_nifH -query $(AUID_FASTA) \
+	    -perc_identity $(NCDCYANO_PCTID) -qcov_hsp_perc $(NCDCYANO_QRYCVG) -outfmt 11 > asn.tmp ; \
+	echo "Reformatting output" ; \
+	blast_formatter -archive asn.tmp -outfmt 0 -num_alignments 10 -num_descriptions 100 \
+	  | gzip > `basename $(NCDCYANO_ALN)` ; \
+	blast_formatter -archive asn.tmp -outfmt 6 > `basename $(NCDCYANO_TAB)` ; \
+	echo "Cleaning up" ; \
+	rm asn.tmp NCD_cyano_nifH.n??
+	@echo ">>>>> Finished searching additional reference nifH <<<<<"
 	@echo
