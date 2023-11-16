@@ -61,12 +61,11 @@ cat("done.\n")
 ## Load tables
 ##
 
-## Tidyverse is adverse to rownames. read_tsv() and friends do not properly read
-## table with rownames: They put the row names into column 1, so for the
-## abundance table we get AUID labels as the values for the first sample, and
-## the final sample is garbage (all "0\t0").  I see no params in read_tsv() to
-## work around this nor solutions online.  Better to use read.table() and
-## convert to a tibble (assuming we prefer tibbles).
+## Tidyverse is adverse to rownames. read_tsv() and friends do not properly read table with
+## rownames: They put the row names into column 1, so for the abundance table we get AUID labels as
+## the values for the first sample, and the final sample is garbage (all "0\t0").  I see no params
+## in read_tsv() to work around this nor solutions online.  Better to use read.table() and convert
+## to a tibble (assuming we prefer tibbles).
 
 cat("Loading the abundance table...")
 abundTab <- read.table(args['abundTabTsv'], stringsAsFactors=T, header=T, row.names=1)
@@ -78,15 +77,22 @@ abundTab <- as_tibble(abundTab) %>%
 cat("done. ",nrow(abundTab),"ASVs X",ncol(abundTab)-1,"working samples.\n")
 
 
+cat("Loading sample metadata...")
+metaTab <- as_tibble(read.table(args['metaTsv'], stringsAsFactors=T, header=T,sep="\t"))
+cat("done. ",nrow(metaTab),"samples X",ncol(metaTab)-1,"metadata variables.\n")
+## Drop "_transcriptomic" which GatherAsvs appended to transcriptomic samples.
+x <- sub('_transcriptomic$','',metaTab$SAMPLEID)
+## Currently we cannot handle DNA and cDNA sequencing runs with same sample ID. Would have to figure
+## out which column in the abundance table is for DNA vs. cDNA (and allowing just one for each?)
+stopifnot(table(x) == 1)
+metaTab$SAMPLEID <- x
+
+
 cat("Loading the CMAP environmental variables...")
 cmapTab <- read_csv(args['envarCsv'], col_types=cols())  # use all cols and avoids msgs
 cat("done. ",nrow(cmapTab),"samples X",ncol(cmapTab)-1,
     "CMAP environmental variables.\n")
 
-
-cat("Loading sample metadata...")
-metaTab <- as_tibble(read.table(args['metaTsv'], stringsAsFactors=T, header=T,sep="\t"))
-cat("done. ",nrow(metaTab),"samples X",ncol(metaTab)-1,"metadata variables.\n")
 
 x <- names(which(abundTab %>% select(-AUID) %>% colSums() == 0))
 if (length(x) > 0) {
