@@ -8,13 +8,14 @@
 ##  - studyID_metadata.csv     Concatenated metadata tables from all studies
 ##
 ##  - metadata.tsv             Cleanup up version of previous.  Just the fields
-##                             needed, standardized and quality checked.  Only
-##                             metagenomic samples retained.
+##                             needed, standardized and quality checked.  Some
+##                             studies use the same sample ID for their DNA and
+##                             cDNA sequencing runs. To ensure unique sample IDs
+##                             in this table, "_transcriptomic" is appended to
+##                             the ID for all metatranscriptomic samples.
 ##
-##  - metatranscriptomic_samples.txt   Transcriptomic sample IDs (original).
-##                             In metadata.tsv the IDs have _transcriptomic
-##                             appended to them to ensure that every sample
-##                             ID in the table is unique.
+##  - metatranscriptomic_samples.txt   Transcriptomic sample IDs without
+##                             "_transcriptomic" appended as in metadata.tsv.
 ##
 ##  - metadata.cmap.tsv        Modified version of metadata.tsv with fields
 ##                             formatted for use as CMAP queries.
