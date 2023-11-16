@@ -4,31 +4,34 @@
 ## Make the nifH ASV database (nifH_ASV_database.tgz) and an associated workspace.RData that
 ## can be used to jumpstart subsequent analysis.  The following kinds of information are in
 ## the database:
-##  AUIDs:    Sequences, abundance counts, annotation
-##  Samples:  Associated metadata and environmental data
-##
-## Main objects saved:
-##     auids        ASV sequences.  1:1 with abundTab
-##     abundTab     ASV abundance counts for all retained samples.  Every count is an
-##                  integer so the table will work with the R vegan package.  (Normalization
-##                  used to make the input abundance tables non-integer.  The code for
-##                  converting to integer is retained.)
-##     relabundTab  ASV relative abundances for all retained samples
-##     cmapTab      Environmental data for samples in abundTab
-##     metaTab      Metadata for samples in abundTab
-##     annotTab     Annotation for ASVS in abundTab
-##
-##     asvCyanos    IDs of all cyanobacteria (best hit in Genomes879)
-##     asvNCDs      IDs of all non-cyanobacteria (best hit in Genomes879)
-##     GetTaxa()    Function used to find ASVs from a specified taxonomic level.
-##                  This was used to create asvCyanos and asvNCDs. Documentation
-##                  within the function (as comments).
+##    AUIDs:    Sequences, abundance counts, annotation
+##    Samples:  Associated metadata and environmental data
+## and are described in workspaceObjectDescriptions below.
 ##
 ## Usage*:
 ##   make_nifH_ASV_database.R  asvAbunds.tsv  asv.fas  asvAnnot.tsv  sampMeta.tsv  cmapData.csv
 ##
 ## *Intended to be called by the Makefile. Not a tool.
 ##
+
+workspaceObjectDescriptions <- "
+  These objects comprise the nifH ASV database:
+     asvSeqs      ASV sequences, 1:1 with abundTab. Each ASV has an ID of the form 'AUID.<number>'.
+                  The number only ensures uniqueness.  It does not indicate the ASV's abundance.
+     abundTab     ASV abundance counts for all retained samples.  Every count is an integer so the
+                  able will work with the R vegan package.
+     relabundTab  ASV relative abundances for all retained samples.
+     cmapTab      Environmental data for samples in abundTab.
+     metaTab      Metadata for samples in abundTab.
+     annotTab     Annotation for ASVS in abundTab.
+
+  The workspace.RData includes the above as well as the following:
+     asvCyanos    Cyanobacteria ASVs based on best hit in Genomes879.
+     asvNCDs      Non-cyanobacgteria ASVs based on best hit in Genomes879.
+     GetTaxa()    Find ASVs with a specified taxonomic level (kingdom to genus) based on the ASV's
+                  best hit in Genomes879.  Documentation is within the function comments.
+"		  
+
 
 ##------------------------------------------------------------------------------
 ##
@@ -114,6 +117,7 @@ if (length(missingIdx) > 0) {
     cat("Dropping", length(missingIdx), "samples from the ASV abundance table",
         "that lack environmental and/or metadata.\n")
     abundTab <- abundTab %>% select(!contains(sampIds[missingIdx]))
+    ## fixme: If going to do this, perhaps should drop these samples from metaTab.
 }
 
 
@@ -141,10 +145,10 @@ if ((length(idx.defs) != length(idx.seqs)) || !all(idx.defs + 1 == idx.seqs)) {
     stop("The FASTA",args['fasta'],"seems to not have alternating definition",
           "and sequence lines.")
 }
-auids <- tibble(AUID     = sub('^>(AUID.[^ ]+) .*$','\\1', fas[idx.defs]),
-                sequence = fas[idx.seqs])
-cat("Loaded",nrow(auids),"ASVs.  ")
-stopifnot(setequal(auids$AUID, abundTab$AUID))
+asvSeqs <- tibble(AUID     = sub('^>(AUID.[^ ]+) .*$','\\1', fas[idx.defs]),
+                  sequence = fas[idx.seqs])
+cat("Loaded",nrow(asvSeqs),"ASVs.  ")
+stopifnot(setequal(asvSeqs$AUID, abundTab$AUID))
 cat("ASVs in FASTA and abundance table are 1:1.\n")
 rm(idx.defs, idx.seqs)
 
@@ -218,11 +222,39 @@ if (x > 0) {
     cat("After this step there are still", tot.initial, "reads.\n")
 }
 
+##
+## Make sure tables are coherent: AUIDs and samples work across tables.
+## Compare to abundTab.
+##
+cat("Checking consistency of data tables (e.g. same ASVs and samples).\n")
+stopifnot(setdiff(colnames(abundTab), metaTab$SAMPLEID) == 'AUID')  # Metadata for all samps
+stopifnot(setdiff(colnames(abundTab), cmapTab$SAMPLEID) == 'AUID')  # CMAP for all samps
+stopifnot(colnames(abundTab) == colnames(relabundTab))              # samples are 1:1
+stopifnot(abundTab$AUID == relabundTab$AUID)                        # ASVs are 1:1 in abund tables
+stopifnot(setequal(asvSeqs$AUID,abundTab$AUID))                     # ASVs are 1:1 with fasta
+stopifnot(asvCyanos %in% abundTab$AUID)
+stopifnot(asvNCDs %in% abundTab$AUID)
 
-save(auids, abundTab, relabundTab, annotTab,
+save(asvSeqs, abundTab, relabundTab, annotTab,
      metaTab, cmapTab, 
      asvCyanos, asvNCDs,
      GetTaxa,
+     workspaceObjectDescriptions,
      file="workspace.RData")
-cat("Saved workspace.RData\n")
+cat("\nSaved workspace.RData which contains the following:")
+cat(workspaceObjectDescriptions,"\n")
+cat("The workspace objects can be used with R tidyverse, or without. No R packages are required.\n\n")
+
+## Create the nifH ASV database
+wdir <- 'nifH_ASV_database'
+dir.create(wdir)
+x <- file.copy(args['fasta'], file.path(wdir,'asvSeqs.fasta'))  # FASTA with original deflines, not asvSeqs
+write_csv(abundTab,           file.path(wdir,'abundTab.csv'))
+write_csv(relabundTab,        file.path(wdir,'relabundTab.csv'))
+write_csv(annotTab,           file.path(wdir,'annotTab.csv'))
+write_csv(metaTab,            file.path(wdir,'metaTab.csv'))
+write_csv(cmapTab,            file.path(wdir,'cmapTab.csv'))
+writeLines(workspaceObjectDescriptions, file.path(wdir,'manifest.txt'))
+cat("Wrote files comprising the nifH ASV database.\n")
+
 quit(save="no")

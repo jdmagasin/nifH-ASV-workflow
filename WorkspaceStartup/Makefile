@@ -1,16 +1,17 @@
 ##
 ## Create the nifH ASV database which has:
-##  * filtered AUID sequences, abundances, and annotations
-##  * sample metadata
-##  * CMAP envrionmental data
+##  * Quality-filtered AUID sequences, abundances, and annotations
+##  * Sample metadata
+##  * CMAP environmental data
 ##
 ## The nifH ASV database is provided in two ways:
 ##  - nifH_ASV_database.tgz:  Separate files for each component of the DB
-##  - workspace.RData:        Data frames for DB components and a few helper functions.
+##  - workspace.RData:        R image with tables (data frames, tidy friendly) DB components and a
+##                            few helper functions.
 ##
 ## Useful targets:
-##   make status	- Print timestamps for files used by this Makefile
-##   make               - Makes the nifH_ASV_database.tgz and workspace.RData
+##   make timestamps	- Print timestamps for required inputs from previous workflow stages
+##   make               - Make the nifH_ASV_database.tgz and workspace.RData
 ##   make all           - Same as previous
 ##   make clean         - Delete nifH_ASV_database.tgz and workspace.RData
 ##
@@ -36,8 +37,6 @@ ANNOTDIR     := $(abspath ../AnnotateAuids)
 ANNOTATION   := $(addprefix $(ANNOTDIR)/,auids.annot.tsv)
 
 ## From CMAP stage
-## FIXME: Currently there is old CMAP environmental data obtained manually by Mo (on 20220831) for
-## some earlier version of metadata.cmap.tsv.
 CMAPDIR  := $(abspath ../CMAP)
 CMAPDATA := $(addprefix $(CMAPDIR)/,CMAP_data.csv.gz)
 
@@ -50,23 +49,30 @@ INPUTS        := $(FILTABUNDTAB) $(FILTFASTA) $(ANNOTATION) $(SAMPMETA) $(CMAPDA
 OUTPUTS       := nifH_ASV_database.tgz workspace.RData \
 	         $(addprefix sampsWithout,Metadata.txt Envdata.txt)
 
-all: $(OUTPUTS)
+all: timestamps $(OUTPUTS)
 
 .PHONY: clean
 clean:
 	rm -f $(OUTPUTS)
 
 
-## fixme: Simplify file path ideally to just the stage dir and file name. (Sed to drop `pwd`)
-.PHONY: status
-status:
-	@echo "Here are the main input files sorted by oldest to newest modification time:"
-	@stat --printf='%y\t%-16n\n' `ls -rt $(INPUTS)` | sed -e 's/\.[0-9][0-9]*.*\t/\t/'
+## Sed captures the year, then drops filepath up through "nifH-ASV-workflow", assuming
+## the user didn't rename the directory after cloning the Git repository.
+.PHONY: timestamps
+timestamps:
+	@echo "Input file modification timestamps are as follows:"
+	@stat --printf='%y\t%-16n\n' `ls -rt $(INPUTS)` \
+	  | sed -e 's/\.[0-9][0-9]*.*\t/\t/' -e 's/  *.*\/nifH-ASV-workflow\//  /'
 	@echo
 
 ## Make the nifH ASV database and the workspace
+## fixme: nifH_ASV_database -> variable
 $(OUTPUTS) &: $(INPUTS)
 	@echo ">>>>> Making the nifH ASV database <<<<<"
 	@$(MAKENIFHASVDB) $^
+	@if [ -d "nifH_ASV_database" ] ; then \
+	    tar cvfz nifH_ASV_database.tgz nifH_ASV_database &> /dev/null ; \
+	    rm -rf nifH_ASV_database ; \
+	fi
 	@echo ">>>>> Finished making the nifH ASV database <<<<<"
 	@echo
