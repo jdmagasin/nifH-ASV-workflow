@@ -7,8 +7,8 @@ dependencies:
   # - snakemake-minimal =7.32.4
   # - snakemake-minimal
   - snakemake
-  - pip =23.3.1
-  - pandas =2.1.2
+  - pip
+  - pandas
   - pip:
       - pycmap ==0.2.19
       - ipython ==8.17.2
