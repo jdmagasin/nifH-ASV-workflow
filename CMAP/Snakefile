@@ -1,0 +1,17 @@
+rule CMAP_query:
+    input:
+        "data/20230719_colocalized_nifH.csv",
+        # "../GatherMetadata/metadata.cmap.tsv",
+    output:
+        "CMAP_metadata.csv",
+    conda:
+        "environments/CMAP_enviroments.yaml"
+    shell:
+        "python3 scripts/query_CMAP.py --input {input} --output {output}"
+
+
+rule clean:
+    shell:
+        """
+        rm -f CMAP_metadata.csv
+        """
