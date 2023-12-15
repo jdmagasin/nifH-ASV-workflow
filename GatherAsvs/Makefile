@@ -11,8 +11,11 @@
 ## Use of this makefile requires both the DADA2 nifH pipeline as well as the ancillary tools.
 ##
 ## Usage:
-##    make                # Default.  Make AUID fasta and abundance table.
-##    make clean          # Remove all outputs from this stage.
+##    make                          # Default.  Make AUID fasta and abundance table.
+##    make REFAUIDS=path/to/fasta   # Reuse AUID numbers for ASVs that exactly match entries
+##                                  # in the passed AUID FASTA. See documenntation for the
+##                                  # pipeline ancillary script assignAUIDs2ASVs.R.
+##    make clean                    # Remove all outputs from this stage.
 ##
 
 SHELL=/usr/bin/bash
@@ -23,6 +26,11 @@ TABLE_OF_ASV_FASTAS := asvs.noChimera.fasta_table.tsv
 ## From assignAUIDs2ASVs.R. Excludes asv2auid.abundances.tsv.gz which is created by
 ## makeBigAbundTable.R.
 ASV2AUID_TSV_FASTA := asv2auid.tsv asv2auid.fasta
+
+## Allow user to pass relative paths to the reference FASTA.  If the user does
+## not pass REFAUIDS, then this statement leaves it empty which works for the
+## call to assignAUIDs2ASVs.R
+REFAUIDSABSPATH = $(shell realpath $(REFAUIDS))
 
 
 ## Default targets.
@@ -93,7 +101,7 @@ $(ASV2AUID_TSV_FASTA): Workdir.tmp/absFastas.tsv NonChimericAsvs
 	done < absFastas.tsv ; \
 	echo "Assigning AUIDs to the non-chimeric ASVs." ; \
 	echo "Restricting to ASVs in length range [200,450]" ; \
-	assignAUIDs2ASVs.R listOfAsvFastas.txt -fasta -length=200,450 ; \
+	assignAUIDs2ASVs.R listOfAsvFastas.txt $(REFAUIDSABSPATH) -fasta -length=200,450 ; \
 	echo ; \
 	echo "See NonChimericAsvs/chimera.log for results summaries for each study.\n" ; \
 	echo
