@@ -30,7 +30,9 @@ ASV2AUID_TSV_FASTA := asv2auid.tsv asv2auid.fasta
 ## Allow user to pass relative paths to the reference FASTA.  If the user does
 ## not pass REFAUIDS, then this statement leaves it empty which works for the
 ## call to assignAUIDs2ASVs.R
-REFAUIDSABSPATH = $(shell realpath $(REFAUIDS))
+ifdef REFAUIDS
+    REFAUIDSABSPATH = $(shell realpath $(REFAUIDS))
+endif
 
 
 ## Default targets.
