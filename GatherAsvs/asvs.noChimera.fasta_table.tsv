@@ -33,14 +33,12 @@ BentzonTilia_2015	../Data/PipelineOutputs/BentzonTilia_2015/Data.nobackup/Dada2P
 Ding_2021	../Data/PipelineOutputs/Ding_2021/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2022May31/TextData/asvs.noChimera.fasta	Ding_2021:1:SRP261427
 
 
-## Treat the cruises from GRADIENTS 1 (in 2016) and 2 (in 2017) as separate studies
-## designated by G1 and G2.
-Gradoville_2020_G1	../Data/PipelineOutputs/Gradoville_2020/Data.nobackup/Dada2PipeOutput/2016/DNA/Frac_3/NPSG/Out.2022Apr23/TextData/asvs.noChimera.fasta	Gradoville_2020_G1:1:SRP190508
-Gradoville_2020_G1	../Data/PipelineOutputs/Gradoville_2020/Data.nobackup/Dada2PipeOutput/2016/DNA/Frac_0.2/NPSG/Out.2022Apr23/TextData/asvs.noChimera.fasta	Gradoville_2020_G1:2:SRP190508
-
-Gradoville_2020_G2	../Data/PipelineOutputs/Gradoville_2020/Data.nobackup/Dada2PipeOutput/2017/DNA/Frac_whole/Transition/Out.2022Apr23/TextData/asvs.noChimera.fasta	Gradoville_2020_G2:3:SRP190508
-Gradoville_2020_G2	../Data/PipelineOutputs/Gradoville_2020/Data.nobackup/Dada2PipeOutput/2017/DNA/Frac_whole/NPSG/Out.2022Apr23/TextData/asvs.noChimera.fasta	Gradoville_2020_G2:4:SRP190508
-Gradoville_2020_G2	../Data/PipelineOutputs/Gradoville_2020/Data.nobackup/Dada2PipeOutput/2017/RNA/Frac_whole/NPSG/Out.2022Apr23/TextData/asvs.noChimera.fasta	Gradoville_2020_G2:5:SRP190508
+## Gradoville_2020 includes cruises GRADIENTS 1 (2016) and 2 (2017).
+Gradoville_2020	../Data/PipelineOutputs/Gradoville_2020/Data.nobackup/Dada2PipeOutput/2016/DNA/Frac_3/NPSG/Out.2022Apr23/TextData/asvs.noChimera.fasta	Gradoville_2020:1:SRP190508
+Gradoville_2020	../Data/PipelineOutputs/Gradoville_2020/Data.nobackup/Dada2PipeOutput/2016/DNA/Frac_0.2/NPSG/Out.2022Apr23/TextData/asvs.noChimera.fasta	Gradoville_2020:2:SRP190508
+Gradoville_2020	../Data/PipelineOutputs/Gradoville_2020/Data.nobackup/Dada2PipeOutput/2017/DNA/Frac_whole/Transition/Out.2022Apr23/TextData/asvs.noChimera.fasta	Gradoville_2020:3:SRP190508
+Gradoville_2020	../Data/PipelineOutputs/Gradoville_2020/Data.nobackup/Dada2PipeOutput/2017/DNA/Frac_whole/NPSG/Out.2022Apr23/TextData/asvs.noChimera.fasta	Gradoville_2020:4:SRP190508
+Gradoville_2020	../Data/PipelineOutputs/Gradoville_2020/Data.nobackup/Dada2PipeOutput/2017/RNA/Frac_whole/NPSG/Out.2022Apr23/TextData/asvs.noChimera.fasta	Gradoville_2020:5:SRP190508
 
 
 Hallstrom_2021	../Data/PipelineOutputs/Hallstrom_2021/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2022May18/TextData/asvs.noChimera.fasta	Hallstrom_2021:1:SRP277143
