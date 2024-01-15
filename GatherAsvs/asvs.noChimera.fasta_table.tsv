@@ -49,15 +49,12 @@ Hallstrom_2022	../Data/PipelineOutputs/Hallstrom_2022/Data.nobackup/Dada2PipeOut
 
 Harding_2018	../Data/PipelineOutputs/Harding_2018/Data.nobackup/Dada2PipeOutput/FiltSterivex/Out.2021Aug27/TextData/asvs.noChimera.fasta	Harding_2018:1:no_SRA
 Harding_2018	../Data/PipelineOutputs/Harding_2018/Data.nobackup/Dada2PipeOutput/Filt0.2/Out.2021Aug27/TextData/asvs.noChimera.fasta	Harding_2018:2:no_SRA
-Harding_2018	../Data/PipelineOutputs/Harding_2018/Data.nobackup/Dada2PipeOutput/Filt3/Out.2021Aug27/TextData/asvs.noChimera.fasta	Harding:3:no_SRA
+Harding_2018	../Data/PipelineOutputs/Harding_2018/Data.nobackup/Dada2PipeOutput/Filt3/Out.2021Aug27/TextData/asvs.noChimera.fasta	Harding_2018:3:no_SRA
 
 
 Mulholland_2018	../Data/PipelineOutputs/Mulholland_2018/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2022May27/TextData/asvs.noChimera.fasta	Mulholland_2018:1:SRP377046
 
 
-# FIXME: When commit the removal of dozen NEMO "e15" nutrient addition samples, remove this
-## comment and delete the next line.
-#NEMO	../Data/PipelineOutputs/NEMO/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2022May28/TextData/asvs.noChimera.fasta	NEMO:1:no_SRA
 NEMO	../Data/PipelineOutputs/NEMO/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2023Dec14/TextData/asvs.noChimera.fasta	NEMO:1:no_SRA
 
 
