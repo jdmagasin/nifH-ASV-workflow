@@ -21,9 +21,9 @@ workspaceObjectDescriptions <- "
      abundTab     ASV abundance counts for all retained samples.  Every count is an integer so the
                   able will work with the R vegan package.
      relabundTab  ASV relative abundances for all retained samples.
-     cmapTab      Environmental data for samples in abundTab.
+     annotTab     Annotation for ASVs in abundTab.
      metaTab      Metadata for samples in abundTab.
-     annotTab     Annotation for ASVS in abundTab.
+     cmapTab      Environmental data for samples in abundTab.
 
   The workspace.RData includes the above as well as the following:
      asvCyanos    Cyanobacteria ASVs based on best hit in Genomes879.
@@ -37,7 +37,13 @@ workspaceObjectDescriptions <- "
 ##
 ## Start up
 ##
+
 options(width = 110)  # Assume 110 cols for wide-ish table printing.
+
+## 16 Nov 2023: For now, do not drop samples from the abundance table that are missing
+## CMAP or meta-data. I don't yet have CMAP data for ~100 transcriptomic samples.
+KEEP_SAMPS_MISSING_META_OR_CMAP_DATA <- TRUE
+
 args <- commandArgs(T)
 if (FALSE) {
     ## DEBUGGING
@@ -119,7 +125,7 @@ writeLines(sampIds[idx],'sampsWithoutMetadata.txt')
 missingIdx <- union(idx, missingIdx)
 
 
-if (length(missingIdx) > 0) {
+if (!KEEP_SAMPS_MISSING_META_OR_CMAP_DATA && length(missingIdx) > 0) {
     cat("Dropping", length(missingIdx), "samples from the ASV abundance table",
         "that lack environmental and/or metadata.\n")
     abundTab <- abundTab %>% select(!contains(sampIds[missingIdx]))
@@ -233,11 +239,13 @@ if (x > 0) {
 ## Compare to abundTab.
 ##
 cat("Checking consistency of data tables (e.g. same ASVs and samples).\n")
-stopifnot(setdiff(colnames(abundTab), metaTab$SAMPLEID) == 'AUID')  # Metadata for all samps
-stopifnot(setdiff(colnames(abundTab), cmapTab$SAMPLEID) == 'AUID')  # CMAP for all samps
-stopifnot(colnames(abundTab) == colnames(relabundTab))              # samples are 1:1
-stopifnot(abundTab$AUID == relabundTab$AUID)                        # ASVs are 1:1 in abund tables
-stopifnot(setequal(asvSeqs$AUID,abundTab$AUID))                     # ASVs are 1:1 with fasta
+if (!KEEP_SAMPS_MISSING_META_OR_CMAP_DATA) {
+    stopifnot(setdiff(colnames(abundTab), metaTab$SAMPLEID) == 'AUID')  # Metadata for all samps
+    stopifnot(setdiff(colnames(abundTab), cmapTab$SAMPLEID) == 'AUID')  # CMAP for all samps
+}
+stopifnot(colnames(abundTab) == colnames(relabundTab))                  # Samps 1:1 in abund tables
+stopifnot(abundTab$AUID == relabundTab$AUID)                            # ASVs 1:1 in abund tables
+stopifnot(setequal(asvSeqs$AUID,abundTab$AUID))                         # ASVs 1:1 with fasta
 stopifnot(asvCyanos %in% abundTab$AUID)
 stopifnot(asvNCDs %in% abundTab$AUID)
 

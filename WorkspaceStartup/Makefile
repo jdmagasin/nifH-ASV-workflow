@@ -38,7 +38,7 @@ ANNOTATION   := $(addprefix $(ANNOTDIR)/,auids.annot.tsv)
 
 ## From CMAP stage
 CMAPDIR  := $(abspath ../CMAP)
-CMAPDATA := $(addprefix $(CMAPDIR)/,CMAP_data.csv.gz)
+CMAPDATA := $(addprefix $(CMAPDIR)/,CMAP_data.csv)
 
 ##
 ## The one script for this stage, and its outputs.  The "sampsWithout" files are diagnostic and not
