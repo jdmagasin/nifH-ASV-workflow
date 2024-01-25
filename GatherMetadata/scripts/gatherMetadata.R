@@ -141,6 +141,8 @@ Fixup_Collection_Date <- function(dates)
 ##
 ##  2. Change GENOMIC --> METAGENOMIC in LibrarySource
 ##
+##  3. Change TRANSCRIPTOMIC --> METATRANSCRIPTOMIC
+##
 ## If need to add more hacks, break into separate functions.
 ##
 ## Return fixed up mdat.
@@ -164,15 +166,15 @@ HackHandleProblemSamples <- function(mdat)
         }
     }
 
-    ## GENOMIC --> METAGENOMIC
+    ## GENOMIC --> METAGENOMIC and TRANSCRIPTOMIC --> METATRANSCRIPTOMIC
     idx <- grep('LibrarySource',colnames(mdat),ignore.case=T)
     if (length(idx) > 0) {
         stopifnot(length(idx)==1)
-        idx2 <- grep('^genomic$',mdat[,idx],ignore.case=T)
+        idx2 <- grep('^(genomic|transcriptomic)$',mdat[,idx],ignore.case=T)
         if (length(idx2) > 0) {
-            cat("\tWARNING: Translated 'genomic' -> 'metagenomic' for",
-                length(idx2), "samples.\n")
-            mdat[idx2,idx] <- 'METAGENOMIC'
+            cat("\tWARNING:  LibrarySource was prefixed with 'META' for",
+                length(idx2), "samples that were 'genomic' or 'transcriptomic'.\n")
+            mdat[idx2,idx] <- paste0('META', toupper(mdat[idx2,idx]))
             stopifnot(nrow(mdat) > 0)
         }
     }
