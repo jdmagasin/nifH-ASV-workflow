@@ -17,6 +17,10 @@
 ##  - metatranscriptomic_samples.txt   Transcriptomic sample IDs without
 ##                             "_transcriptomic" appended as in metadata.tsv.
 ##
+##  - samples_need_CMAP.txt    Samples that need CMAP environmental data.  This
+##                             is created from the column names in the filtered
+##                             abundance table from FilterAuids.
+##
 ##  - metadata.cmap.tsv        Modified version of metadata.tsv with fields
 ##                             formatted for use as CMAP queries.
 ##
@@ -27,7 +31,8 @@
 
 SHELL=/usr/bin/bash
 
-targets=studyID_metadata.csv metadata.tsv metadata.cmap.tsv metatranscriptomic_samples.txt
+targets=studyID_metadata.csv metadata.tsv metadata.cmap.tsv metatranscriptomic_samples.txt \
+        samples_need_CMAP.txt
 
 all: $(targets)
 
@@ -70,7 +75,18 @@ metadata.tsv metatranscriptomic_samples.txt: studyID_metadata.csv
 	@echo
 
 
-metadata.cmap.tsv: metadata.tsv
+## Get a list (one file per line) of the samples in the abundance table.  We
+## want only these samples in metadata.cmap.tsv so that the CMAP stage only asks
+## for environmental data for samples with ASV data.
+## Note that sed is used grab the sample ID by stripping of the tag preceding ___.
+samples_need_CMAP.txt: ../FilterAuids/auid.abundances.filtered.tsv.gz
+	@echo ">>>>> Determining which samples have ASVs and thus will need CMAP data. <<<<<"
+	@zcat $< | head -n 1 | tr "\t" "\n" | sed -e 's/^..*___//' > $@
+	@echo "There are" `cat $@ | wc -l` "samples that will need CMAP data."
+	@echo ">>>>> Finished determining samples that need CMAP data. <<<<<"
+	@echo
+
+metadata.cmap.tsv: metadata.tsv samples_need_CMAP.txt
 	@echo ">>>>> Standardizing metadata values when possible (dates, lat/lon) <<<<<"
 	@echo "This step makes $@"
 	@scripts/prepareMetadataForCmap.R

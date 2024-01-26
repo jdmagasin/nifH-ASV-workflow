@@ -12,6 +12,18 @@
 ##
 
 metadata <- read.table('metadata.tsv', header=T, check.names=F, stringsAsFactors=T)
+sampsNeeded <- unique(readLines('samples_need_CMAP.txt'))
+
+## gatherMetadata.R tacks on "_transcriptomic" to RNA sample names that will appear
+## in metadata.tsv, but _transcriptomic is not in the abundance table column names
+## and thus it is not in sampsNeeded. Drop _transcriptomic for the following check.
+x <- setdiff(sampsNeeded, sub('_transcriptomic$','',metadata$SAMPLEID))
+if (length(x) > 0) {
+    warning("There is no metadata for the following ",length(x), " samples so CMAP ",
+            "data will not be obtained: ", paste(x, collapse=','))
+}
+metadata <- subset(metadata, SAMPLEID %in% sampsNeeded)
+stopifnot(nrow(metadata) > 0)  # bad samples_need_CMAP.txt?
 
 ## These are the fields that are carefully checked. (A few more are checked only
 ## to see that they always are NA.)
@@ -179,7 +191,7 @@ Make_Alt_Lat_Lon <- function()
             stopifnot(length(x) == nrow(metadata) && length(x) > 0)
             {
                 ## Mo added some coords with NSWE so handle that.
-		swreg <- '^[\\-]{0,1}[0-9]+\\.{0,1}[0-9]* *[SW]$'
+                swreg <- '^[\\-]{0,1}[0-9]+\\.{0,1}[0-9]* *[SW]$'
                 idx <- grep(swreg,x)  # Needs sign flip
                 if (length(idx) > 0) {
                     annie <- as.numeric(sub(' *[SW]$','',x[idx]))
@@ -187,7 +199,7 @@ Make_Alt_Lat_Lon <- function()
                     x[idx] <- as.character(0 - annie)
                 }
                 ## Remove the directions for those that did not need a sign flip.
-		nereg <- '^[\\-]{0,1}[0-9]+\\.{0,1}[0-9]* *[NE]$'
+                nereg <- '^[\\-]{0,1}[0-9]+\\.{0,1}[0-9]* *[NE]$'
                 idx <- grep(nereg,x)
                 if (length(idx) > 0) { x[idx] <- sub(' *[NE]$','',x[idx]) }
             }
