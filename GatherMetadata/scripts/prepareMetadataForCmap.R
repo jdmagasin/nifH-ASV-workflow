@@ -17,12 +17,13 @@ sampsNeeded <- unique(readLines('samples_need_CMAP.txt'))
 ## gatherMetadata.R tacks on "_transcriptomic" to RNA sample names that will appear
 ## in metadata.tsv, but _transcriptomic is not in the abundance table column names
 ## and thus it is not in sampsNeeded. Drop _transcriptomic for the following check.
-x <- setdiff(sampsNeeded, sub('_transcriptomic$','',metadata$SAMPLEID))
+simpleSampID <- sub('_transcriptomic$','',metadata$SAMPLEID)
+x <- setdiff(sampsNeeded, simpleSampID)
 if (length(x) > 0) {
     warning("There is no metadata for the following ",length(x), " samples so CMAP ",
             "data will not be obtained: ", paste(x, collapse=','))
 }
-metadata <- subset(metadata, SAMPLEID %in% sampsNeeded)
+metadata <- metadata[simpleSampID %in% sampsNeeded, ]
 stopifnot(nrow(metadata) > 0)  # bad samples_need_CMAP.txt?
 
 ## These are the fields that are carefully checked. (A few more are checked only
