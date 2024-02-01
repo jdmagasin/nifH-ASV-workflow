@@ -58,7 +58,7 @@ names(args) <- c('abundTabTsv', 'fasta', 'annotTsv', 'metaTsv', 'envarCsv')
 stopifnot(file.exists(args))
 
 cat("Loading libraries...")
-suppressMessages(library(tidyverse))  # FIXME: add to Installation/environment_nifH_ASV_workflow.yml
+suppressMessages(library(tidyverse))
 cat("done.\n")
 
 
