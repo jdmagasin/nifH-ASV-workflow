@@ -1,12 +1,14 @@
 ## Copyright (C) 2023 Jonathan D. Magasin
 ##
 ## This file describes tools required to run the nifH ASV workflow.
-## Additionally the tools provided in the DADA2_nifH environment that was
-## created during installation of the DADA2 nifH pipeline are required.
-## Both environments must be activated in order to use the workflow.
+## Additionally the tools provided in the environment DADA2_nifH, which was
+## created during installation of the DADA2 nifH pipeline, are required.
+## Both environments must be activated in order to use the workflow (using
+## --stack, described in INSTALL.txt).
 ##
-## Maintainer caution: Do not add R packages because we want the R installed in
-## DADA2_nifH to be used.
+## Maintainer caution: Do NOT add R packages because we want the R installed in
+## DADA2_nifH to be used.  See detailed maintainer note in the DADA2 nifH
+## pipeline file Installation/environment_DADA2_nifH.yml.
 ##
 name: nifH_ASV_workflow
 channels:
