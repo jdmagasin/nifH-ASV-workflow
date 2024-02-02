@@ -4,20 +4,41 @@
 
 Copyright (C) 2023 Jonathan D. Magasin
 
-The workflow requires several external tools which we will install in a new
-conda environment called nifH_ASV_workflow.  You should have already installed
-miniconda, most likely when you installed the DADA2 nifH pipeline and created
-the DADA2_nifH conda environment.
+The nifH ASV workflow requires the DADA2 nifH pipeline:
+  https://github.com/jdmagasin/nifH_amplicons_DADA2
+as well as several external tools.  This document explains how to create a conda
+environment "nifH_ASV_workflow" that includes the pipeline and all required
+tools.
 
-In a shell (BASH recommended) do the following to create nifH_ASV_workflow:
+You should have already installed miniconda (or mamba) as well as the DADA2 nifH
+pipeline following the directions in the Installation directory at the GitHub
+link above.
 
-    conda env create --file environment_nifH_ASV_workflow.yml
+To create the nifH_ASV_workflow environment, use conda (or mamba) as shown in
+this following shell command.  (BASH shell recommended. Here the shell prompt
+shows that the "base" conda environment is active.)
 
-When you want to use the workflow, you must activate both DADA2_nifH and
-nifH_ASV_workflow as follows:
+    (base) % conda env create --file environment_nifH_ASV_workflow.yml
 
-    conda activate DADA2_nifH
-    conda activate --stack nifH_ASV_workflow
+Installation will take just a few minutes.  You can see the new environment
+listed among your other environments with:
 
-Although the shell prompt will change to "(nifH_ASV_workflow)", tools supplied
-by both environments will be available.
+    (base) % conda env list
+
+
+To use the workflow you must activate the nifH_ASV_workflow environment as
+follows:
+
+    (base) % conda activate nifH_ASV_workflow
+    (nifH_ASV_workflow) %
+
+The shell prompt changed to nifH_ASV_workflow.  The DADA2 nifH pipeline and
+ancillary scripts, as well as all additional tools needed to run the workflow,
+are now accessible.
+
+
+Technical detail: The installation of the DADA2 nifH pipeline created the conda
+environment DADA2_nifH. That is a completely separate environment from the
+workflow conda environment you just created, nifH_ASV_workflow.  Because the
+pipeline installation also changed your shell PATH to include the pipeline's
+core and ancillary scripts, those scripts remain accessible to the workflow.
