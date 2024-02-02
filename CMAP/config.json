@@ -1,5 +1,5 @@
 {
-    "input_path": "data/20230719_colocalized_nifH.csv",
-    "output_path": "CMAP_metadata.csv.gz",
+    "input_path": "../GatherMetadata/test_sample_collection_data.csv",
+    "output_path": "data/CMAP_metadata.csv.gz",
     "api_key": "4f3123a0-7fa3-11ec-a96e-6968a44bdc83"
 }
