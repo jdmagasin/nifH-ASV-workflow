@@ -1,4 +1,7 @@
 import argparse
+import gzip
+import shutil
+import subprocess
 import pycmap
 import pandas as pd
 
@@ -10,12 +13,23 @@ def parse_arguments():
     parser.add_argument(
         "--output", type=str, help="Path to save the colocalized dataset CSV file."
     )
+    parser.add_argument(
+        "--cmap_api_key",
+        type=str,
+        help="""
+        Your specific CMAP API key. This can be obtain at https://simonscmap.com/apikeymanagementthwi
+        """,
+    )
     return parser.parse_args()
 
 
 # Parse command-line arguments
 args = parse_arguments()
 
+# Set the CMAP API key
+pycmap.API(token=args.cmap_api_key)
+
+# Define targets, which tables and variables and at what tolerances
 targets = {
     "tblAltimetry_REP_Signal": {
         "variables": ["sla"],
@@ -149,8 +163,8 @@ targets = {
     #         "s_mn_clim",
     #         "t_an_clim",
     #         "t_mn_clim",
-    #         "i_an_clim",
-    #         "i_mn_clim",
+    #         "I_an_clim",
+    #         "I_mn_clim",
     #     ],
     #     "tolerances": [1, 0.5, 0.5, 5],
     # },
@@ -166,8 +180,8 @@ targets = {
     #         "A_mn_clim",
     #         "O_an_clim",
     #         "O_mn_clim",
-    #         "i_an_clim",
-    #         "i_mn_clim",
+    #         "I_an_clim",
+    #         "I_mn_clim",
     #         "n_an_clim",
     #         "n_mn_clim",
     #         "p_an_clim",
@@ -194,23 +208,49 @@ targets = {
     # },
 }
 
-print(f"version: {pycmap.__version__}")
-
-pycmap.API(token="4f3123a0-7fa3-11ec-a96e-6968a44bdc83")  # replace with your API key
+# Print Pycmap version
+print(f"pycmap version: {pycmap.__version__}")
 
 # Load data from the specified input path
-data = pd.read_csv(args.input)
+data: pd.DataFrame = pd.read_csv(filepath_or_buffer=args.input)
 
 # Colocalize the data
 print(
     f"""
-      Colocalizing data with CMAP.
-      This should take awhile depending of the size of your dataframe and number of cores. 
-      """
+This should take awhile depending of the size of your dataframe and number of cores. 
+Colocalizing data with CMAP.
+    """
 )
-cDF = pycmap.Sample(source=data, targets=targets, replaceWithMonthlyClimatolog=True)
 
-# Save the colocalized dataset to the specified output path
-cDF.to_csv(args.output, index=False)
+# Colocalize data
+cDF: pd.DataFrame = pycmap.Sample(
+    source=data, targets=targets, replaceWithMonthlyClimatolog=True
+)
 
-print(f"Colocalized dataset saved to {args.output}")
+# specify temporary csv file
+temp_csv_path = "temp_colocalized_df.csv"
+
+# Save the colocalized dataset as a CSV file
+cDF.to_csv(path_or_buf=temp_csv_path, index=False)
+
+# Compress the temp CSV file with gzip
+with open(file=temp_csv_path, mode="rb") as f_in, gzip.open(
+    args.output, mode="wb"
+) as f_out:
+    shutil.copyfileobj(fsrc=f_in, fdst=f_out)
+
+print(
+    f"""
+Colocalized dataset saved and compressed to {args.output}
+    """
+)
+
+subprocess.run(args=["rm", temp_csv_path])
+
+print(
+    f"""
+Remove temporary CSV file
+    """
+)
+# # Save the colocalized dataset to the specified output path
+# cDF.to_csv(args.output, index=False)

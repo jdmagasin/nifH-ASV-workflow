@@ -1,17 +1,58 @@
+## Copyright (C) 2023 Mo Morando
+##
+## FIXME: query_CMAP.py that takes metadata.cmap.tsv and outputs compressed metadata file CMAP_metadata.csv.gz. Use ../GatherMetadata/metadata.cmap.tsv to query CMAP for environmental data for each sample, using the sample's date (at local noon), latitude, longitude, and depth.  Produce CMAP_data.csv which has one row for each sample and columns that are the CMAP query fields and all the downloaded/colocated environmental variables.
+
+
+##
+## Usage:
+##    snakemake --cores 1 --use-conda       # Default. Get CMAP data if metadata.cmap.tsv changed.
+##    snakemake --cores 1 --use-conda clean # Remove CMAP_metadata.csv.gz
+##
+
+
+# Load parameters from JSON config
+configfile: "config.json"
+
+
+# Import the datetime module
+import datetime
+
+# Get the current date and time as a string
+timestamp = datetime.datetime.now().strftime("%Y%m%d")
+
+# Use the timestamp in the log file name
+logfile = "log_{}.txt".format(timestamp)
+
+
 rule CMAP_query:
     input:
-        "data/20230719_colocalized_nifH.csv",
-        # "../GatherMetadata/metadata.cmap.tsv",
+        config["input_path"],
     output:
-        "CMAP_metadata.csv",
+        config["output_path"],
+    params:
+        api_key=config["api_key"],
+    log:
+        logfile,
     conda:
         "environments/CMAP_enviroments.yaml"
     shell:
-        "python3 scripts/query_CMAP.py --input {input} --output {output}"
+        """
+        python3 scripts/query_CMAP.py --input {input} --output {output} --cmap_api_key {params.api_key} > {log} 2>&1
+        """
 
 
 rule clean:
     shell:
         """
-        rm -f CMAP_metadata.csv
+        echo "Cleaning output file only"
+        snakemake -c 1 --use-conda --delete-all-output
+        """
+
+
+rule clean_all:
+    shell:
+        """
+        echo "Cleaning all files"
+        snakemake -c 1 --use-conda --delete-all-output
+        rm -f {logfile}
         """
