@@ -13,7 +13,7 @@ usageStr = "
      
    - nifH-like dir is the directory with results from
      CheckNifHLike/classifyNifH.sh. The directory includes the outputs
-     positives.ids, negatives.ids, and unsures.ids.
+     positives.ids, negatives.ids, unsure.ids, and nohits.ids.
 
   Main output of this script is the filtered abundance table
   auid.abundances.filtered.tsv.gz

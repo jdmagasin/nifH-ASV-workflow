@@ -388,6 +388,27 @@ cat("\n\nA total of", length(tot),"rows in the metadata table have\n",
     "excludes missing values (NA). See the rightmost \"FIXME\" columns\n",
     "to determine which rows/fields need attention.\n\n")
 
+## Correct some of the field names to be what CMAP expects in queries:
+##   https://cmap.readthedocs.io/en/latest/user_guide/API_ref/pycmap_api/data_retrieval/pycmap_query.html
+## Simplest to do here e.g. in case CMAP ever changes the names.
+cnams <- colnames(metadata)
+map2qryfields <- c(Lat = 'lat', Lon = 'lon', Depth = 'depth', DateTimeUTC = 'time')
+idx <- match(names(map2qryfields), cnams)
+stopifnot(!is.na(idx))
+cnams[idx] <- as.character(map2qryfields)
+stopifnot(table(cnams) == 1)  # ensure no duplicated field namees
+colnames(metadata) <- cnams
+
+## Now restrict to just the fields CMAP needs to know (lat,lon,time,depth) and
+## SAMPLEID, StudyID, and any of the "FIXME." fields.  The goal is to prevent
+## CMAP from seeing/responding to any fields that we do not expect it to (due to
+## API changes or bugs).
+wanted <- c('SAMPLEID', 'StudyID', 'lat', 'lon', 'time', 'depth')
+wanted <- c(wanted, colnames(metadata)[grep('^FIXME\\.',colnames(metadata))])
+cat("Restricting CMAP query table metadata.cmap.tsv to these columns:\n", wanted, "\n")
+stopifnot(wanted %in% colnames(metadata))
+metadata <- metadata[,wanted]
+
 cat("\nWriting metadata.cmap.tsv\n")
 write.table(metadata, 'metadata.cmap.tsv', sep="\t", row.names=F)
 cat("Done!\n")
