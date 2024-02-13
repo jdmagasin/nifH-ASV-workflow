@@ -5,8 +5,8 @@
 
 ##
 ## Usage:
-##    snakemake --cores 1 --use-conda       # Default. Get CMAP data if metadata.cmap.tsv changed.
-##    snakemake --cores 1 --use-conda clean # Remove CMAP_metadata.csv.gz
+##    snakemake -c 1 --use-conda       # Default. Get CMAP data if metadata.cmap.tsv changed.
+##    snakemake -c 1 --use-conda clean # Remove CMAP_metadata.csv.gz
 ##
 
 

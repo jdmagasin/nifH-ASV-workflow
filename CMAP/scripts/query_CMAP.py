@@ -64,7 +64,7 @@ targets = {
     # "tblSST_AVHRR_OI_NRT": {"variables": ["sst"], "tolerances": [1, 0.25, 0.25, 1]},
     # "tblWind_NRT_hourly": {
     #     "variables": [
-    #         # wind_speed",
+    #         # wind_speed", # no longer available
     #         "wind_curl",
     #         "stress_curl",
     #     ],
