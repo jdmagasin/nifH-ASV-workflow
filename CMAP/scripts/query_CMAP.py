@@ -17,7 +17,7 @@ def parse_arguments():
         "--cmap_api_key",
         type=str,
         help="""
-        Your specific CMAP API key. This can be obtain at https://simonscmap.com/apikeymanagementthwi
+        Your specific CMAP API key. This can be obtained at https://simonscmap.com/apikeymanagement
         """,
     )
     return parser.parse_args()
@@ -65,7 +65,7 @@ targets = {
     "tblWind_NRT_hourly": {
         "variables": [
             # wind_speed", # no longer available
-            "wind_curl",
+            # "wind_curl", # FIXME: Exists in CMAP docs of Feb 2021 but causes KeyError crash
             "stress_curl",
         ],
         "tolerances": [1, 0.25, 0.25, 1],
@@ -212,7 +212,7 @@ targets = {
 print(f"pycmap version: {pycmap.__version__}")
 
 # Load data from the specified input path
-data: pd.DataFrame = pd.read_csv(filepath_or_buffer=args.input)
+data: pd.DataFrame = pd.read_csv(filepath_or_buffer=args.input, sep="\t", comment='#')
 
 # Colocalize the data
 print(

@@ -1,6 +1,5 @@
 ## Copyright (C) 2023 Mo Morando
 ##
-## FIXME: query_CMAP.py that takes metadata.cmap.tsv and outputs compressed metadata file CMAP_metadata.csv.gz. Use ../GatherMetadata/metadata.cmap.tsv to query CMAP for environmental data for each sample, using the sample's date (at local noon), latitude, longitude, and depth.  Produce CMAP_data.csv which has one row for each sample and columns that are the CMAP query fields and all the downloaded/colocated environmental variables.
 
 
 ##
@@ -44,7 +43,7 @@ rule CMAP_query:
 rule clean:
     shell:
         """
-        echo "Cleaning output file only"
+        echo "Cleaning output files only"
         snakemake -c 1 --use-conda --delete-all-output
         """
 
