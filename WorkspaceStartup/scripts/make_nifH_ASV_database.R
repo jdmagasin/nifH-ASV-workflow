@@ -26,19 +26,19 @@ workspaceObjectDescriptions <- "
      cmapTab      Environmental data for samples in abundTab.
 
   The workspace.RData includes the above as well as the following:
-     asvCyanos    Cyanobacteria ASVs based on best hit in Genomes879.
-     asvNCDs      Non-cyanobacgteria ASVs based on best hit in Genomes879.
+     asvCyanos    Cyanobacteria ASVs based on best hit in Genome879.
+     asvNCDs      Non-cyanobacgteria ASVs based on best hit in Genome879.
      GetTaxa()    Find ASVs with a specified taxonomic level (kingdom to genus) based on the ASV's
-                  best hit in Genomes879.  Documentation is within the function comments.
-"		  
+                  best hit in Genome879.  Documentation is within the function comments.
+"
 
 
-##------------------------------------------------------------------------------
+## ------------------------------------------------------------------------------
 ##
 ## Start up
 ##
 
-options(width = 110)  # Assume 110 cols for wide-ish table printing.
+options(width = 110) # Assume 110 cols for wide-ish table printing.
 
 ## 16 Nov 2023: For now, do not drop samples from the abundance table that are missing
 ## CMAP or meta-data. I don't yet have CMAP data for ~100 transcriptomic samples.
@@ -47,14 +47,16 @@ KEEP_SAMPS_MISSING_META_OR_CMAP_DATA <- TRUE
 args <- commandArgs(T)
 if (FALSE) {
     ## DEBUGGING
-    args <- c('../FilterAuids/auid.abundances.filtered.tsv.gz',
-              '../FilterAuids/auid.filtered.fasta',
-              '../GatherMetadata/metadata.tsv',
-              '../AnnotateAuids/auids.annot.tsv',
-              '../CMAP/CMAP_data.csv.gz')
+    args <- c(
+        "../FilterAuids/auid.abundances.filtered.tsv.gz",
+        "../FilterAuids/auid.filtered.fasta",
+        "../GatherMetadata/metadata.tsv",
+        "../AnnotateAuids/auids.annot.tsv",
+        "../CMAP/CMAP_data.csv.gz"
+    )
 }
 stopifnot(length(args) == 5)
-names(args) <- c('abundTabTsv', 'fasta', 'annotTsv', 'metaTsv', 'envarCsv')
+names(args) <- c("abundTabTsv", "fasta", "annotTsv", "metaTsv", "envarCsv")
 stopifnot(file.exists(args))
 
 cat("Loading libraries...")
@@ -62,7 +64,7 @@ suppressMessages(library(tidyverse))
 cat("done.\n")
 
 
-##------------------------------------------------------------------------------
+## ------------------------------------------------------------------------------
 ##
 ## Load tables
 ##
@@ -74,20 +76,20 @@ cat("done.\n")
 ## to a tibble (assuming we prefer tibbles).
 
 cat("Loading the abundance table...")
-abundTab <- read.table(args['abundTabTsv'], stringsAsFactors=T, header=T, row.names=1)
+abundTab <- read.table(args["abundTabTsv"], stringsAsFactors = T, header = T, row.names = 1)
 abundTab$AUID <- rownames(abundTab)
 ## Rename columns to use just the sample ID and make AUID column 1
-abundTab <- as_tibble(abundTab) %>% 
-    rename_with(~ str_replace(.x, '^.+___','')) %>%
+abundTab <- as_tibble(abundTab) %>%
+    rename_with(~ str_replace(.x, "^.+___", "")) %>%
     select(AUID, everything())
-cat("done. ",nrow(abundTab),"ASVs X",ncol(abundTab)-1,"working samples.\n")
+cat("done. ", nrow(abundTab), "ASVs X", ncol(abundTab) - 1, "working samples.\n")
 
 
 cat("Loading sample metadata...")
-metaTab <- as_tibble(read.table(args['metaTsv'], stringsAsFactors=T, header=T,sep="\t"))
-cat("done. ",nrow(metaTab),"samples X",ncol(metaTab)-1,"metadata variables.\n")
+metaTab <- as_tibble(read.table(args["metaTsv"], stringsAsFactors = T, header = T, sep = "\t"))
+cat("done. ", nrow(metaTab), "samples X", ncol(metaTab) - 1, "metadata variables.\n")
 ## Drop "_transcriptomic" which GatherAsvs appended to transcriptomic samples.
-x <- sub('_transcriptomic$','',metaTab$SAMPLEID)
+x <- sub("_transcriptomic$", "", metaTab$SAMPLEID)
 ## Currently we cannot handle DNA and cDNA sequencing runs with same sample ID. Would have to figure
 ## out which column in the abundance table is for DNA vs. cDNA (and allowing just one for each?)
 stopifnot(table(x) == 1)
@@ -95,9 +97,11 @@ metaTab$SAMPLEID <- x
 
 
 cat("Loading the CMAP environmental variables...")
-cmapTab <- read_csv(args['envarCsv'], col_types=cols())  # use all cols and avoids msgs
-cat("done. ",nrow(cmapTab),"samples X",ncol(cmapTab)-1,
-    "CMAP environmental variables.\n")
+cmapTab <- read_csv(args["envarCsv"], col_types = cols()) # use all cols and avoids msgs
+cat(
+    "done. ", nrow(cmapTab), "samples X", ncol(cmapTab) - 1,
+    "CMAP environmental variables.\n"
+)
 
 
 x <- names(which(abundTab %>% select(-AUID) %>% colSums() == 0))
@@ -110,36 +114,44 @@ if (length(x) > 0) {
 
 
 cat("Shrinking CMAP and sample metadata tables to have just the samples in the abundance table.\n")
-sampIds <- setdiff(colnames(abundTab),'AUID')
+sampIds <- setdiff(colnames(abundTab), "AUID")
 cmapTab <- cmapTab %>% filter(SAMPLEID %in% sampIds)
-missingIdx <- idx <- which(! sampIds %in% cmapTab$SAMPLEID)
-cat(length(idx),"samples in the abundance table have no environmental data",
-    "(sampsWithoutEnvdata.txt)\n")
-writeLines(sampIds[idx],'sampsWithoutEnvdata.txt')
+missingIdx <- idx <- which(!sampIds %in% cmapTab$SAMPLEID)
+cat(
+    length(idx), "samples in the abundance table have no environmental data",
+    "(sampsWithoutEnvdata.txt)\n"
+)
+writeLines(sampIds[idx], "sampsWithoutEnvdata.txt")
 
 metaTab <- metaTab %>% filter(SAMPLEID %in% sampIds)
-idx <- which(! sampIds %in% metaTab$SAMPLEID)
-cat(length(idx),"samples in the abundance table have no sample metadata",
-    "(sampsWithoutMetadata.txt)\n")
-writeLines(sampIds[idx],'sampsWithoutMetadata.txt')
+idx <- which(!sampIds %in% metaTab$SAMPLEID)
+cat(
+    length(idx), "samples in the abundance table have no sample metadata",
+    "(sampsWithoutMetadata.txt)\n"
+)
+writeLines(sampIds[idx], "sampsWithoutMetadata.txt")
 missingIdx <- union(idx, missingIdx)
 
 
 if (!KEEP_SAMPS_MISSING_META_OR_CMAP_DATA && length(missingIdx) > 0) {
-    cat("Dropping", length(missingIdx), "samples from the ASV abundance table",
-        "that lack environmental and/or metadata.\n")
+    cat(
+        "Dropping", length(missingIdx), "samples from the ASV abundance table",
+        "that lack environmental and/or metadata.\n"
+    )
     abundTab <- abundTab %>% select(!contains(sampIds[missingIdx]))
     ## fixme: If going to do this, perhaps should drop these samples from metaTab.
 }
 
 
 cat("Loading annotation...")
-## Load annotation for ASVs in the abundance table, and split the Genomes879
+## Load annotation for ASVs in the abundance table, and split the Genome879
 ## taxa string.
-annotTab <- read_tsv(args['annotTsv'], col_types=cols()) %>%
-  filter(AUID %in% abundTab$AUID) %>%
-  separate(col = Genomes879.tax,
-           sep = ';', paste0("Genomes879.",c('k','p','c','o','f','g')))
+annotTab <- read_tsv(args["annotTsv"], col_types = cols()) %>%
+    filter(AUID %in% abundTab$AUID) %>%
+    separate(
+        col = Genome879.tax,
+        sep = ";", paste0("Genome879.", c("k", "p", "c", "o", "f", "g"))
+    )
 cat("done.\n")
 
 
@@ -148,30 +160,33 @@ cat("done.\n")
 ## Create vector 'auids' which has values that are the AUID sequences and names
 ## that are the AUID identifiers (AUID.<num>).
 cat("Loading ASV sequences...")
-fas <- readLines(args['fasta'])
-fas <- fas[fas != '']  # Drop empty lines
+fas <- readLines(args["fasta"])
+fas <- fas[fas != ""] # Drop empty lines
 ## Checks that lines alternate AUID, then sequence.
-idx.defs <- grep('^>AUID',fas)
-idx.seqs <- grep('^>AUID',fas,invert=T)
+idx.defs <- grep("^>AUID", fas)
+idx.seqs <- grep("^>AUID", fas, invert = T)
 if ((length(idx.defs) != length(idx.seqs)) || !all(idx.defs + 1 == idx.seqs)) {
-    stop("The FASTA",args['fasta'],"seems to not have alternating definition",
-          "and sequence lines.")
+    stop(
+        "The FASTA", args["fasta"], "seems to not have alternating definition",
+        "and sequence lines."
+    )
 }
-asvSeqs <- tibble(AUID     = sub('^>(AUID.[^ ]+) .*$','\\1', fas[idx.defs]),
-                  sequence = fas[idx.seqs])
-cat("Loaded",nrow(asvSeqs),"ASVs.  ")
+asvSeqs <- tibble(
+    AUID = sub("^>(AUID.[^ ]+) .*$", "\\1", fas[idx.defs]),
+    sequence = fas[idx.seqs]
+)
+cat("Loaded", nrow(asvSeqs), "ASVs.  ")
 stopifnot(setequal(asvSeqs$AUID, abundTab$AUID))
 cat("ASVs in FASTA and abundance table are 1:1.\n")
 rm(idx.defs, idx.seqs)
 
 
-##------------------------------------------------------------------------------
+## ------------------------------------------------------------------------------
 ##
 ## Define some helpful functions
 ##
 
-GetTaxa <- function(lev, taxa, invert=FALSE)
-{
+GetTaxa <- function(lev, taxa, invert = FALSE) {
     ##
     ## Return a character vector of ASVs that have taxonomic level 'lev' that is
     ## equal to the specified 'taxa'.  Pass 'lev' an element in {k,p,c,o,f,g}.
@@ -179,57 +194,70 @@ GetTaxa <- function(lev, taxa, invert=FALSE)
     ##    asvCyanos <- GetTaxa('p','Cyanobacteria')
     ##    asvNCDs   <- GetTaxa('p','Cyanobacteria', invert=T)
     ##
-    ## Taxomomic information is based on the ASV's best hit to Genomes879, which
+    ## Taxomomic information is based on the ASV's best hit to Genome879, which
     ## is recorded in the 'annotTab'.
     ##
-    stopifnot(lev %in% c('k','p','c','o','f','g'))
-    g879Taxon <- paste0("Genomes879.", lev)
+    stopifnot(lev %in% c("k", "p", "c", "o", "f", "g"))
+    g879Taxon <- paste0("Genome879.", lev)
     if (invert) {
-        ss <- annotTab %>% filter(! .data[[g879Taxon]] %in% taxa )
+        ss <- annotTab %>% filter(!.data[[g879Taxon]] %in% taxa)
     } else {
-        ss <- annotTab %>% filter( .data[[g879Taxon]] %in% taxa )
+        ss <- annotTab %>% filter(.data[[g879Taxon]] %in% taxa)
     }
     ## as_vector names to the vector entries (to "AUID1","AUID2",etc.) which
     ## is silly/redundant for our purpose. Strip the names with as.character.
-    ss %>% select(AUID) %>% as_vector %>% as.character
+    ss %>%
+        select(AUID) %>%
+        as_vector() %>%
+        as.character()
 }
 
 
-##------------------------------------------------------------------------------
+## ------------------------------------------------------------------------------
 ##
 ## Useful ASV lists
 ##
-asvCyanos <- GetTaxa('p','Cyanobacteria')
-asvNCDs   <- GetTaxa('p','Cyanobacteria', invert=T)
+asvCyanos <- GetTaxa("p", "Cyanobacteria")
+asvNCDs <- GetTaxa("p", "Cyanobacteria", invert = T)
 
 
-##------------------------------------------------------------------------------
+## ------------------------------------------------------------------------------
 ##
 ## Make a relative abundance table
 ##
 
-relabundTab <- abundTab %>% mutate_at(vars(-AUID),  ~ ./sum(.))
+relabundTab <- abundTab %>% mutate_at(vars(-AUID), ~ . / sum(.))
 ## Verify all columns sum to ~1, and all cols are type double.
-stopifnot( abs((relabundTab %>% select(-AUID) %>% colSums()) -1) < 1e-9 )
-stopifnot( sapply(relabundTab[,-1],class) == 'numeric' )
+stopifnot(abs((relabundTab %>% select(-AUID) %>% colSums()) - 1) < 1e-9)
+stopifnot(sapply(relabundTab[, -1], class) == "numeric")
 
-##------------------------------------------------------------------------------
+## ------------------------------------------------------------------------------
 ##
 ## Ensure that abundTab is integer-only.
 ##
 ## table(sapply(abundTab, class))  # Shows that there are integers and doubles.
 cat("\nForcing abundTab to have only integers to be vegan-friendly.\n")
-tot.initial <- abundTab %>% column_to_rownames('AUID') %>% as.matrix() %>% sum()
+tot.initial <- abundTab %>%
+    column_to_rownames("AUID") %>%
+    as.matrix() %>%
+    sum()
 int_if_need <- function(v) {
-    if (!is.integer(v)) { v <- as.integer(round(v)) }
+    if (!is.integer(v)) {
+        v <- as.integer(round(v))
+    }
     v
 }
 abundTab <- abundTab %>% mutate(across(-AUID, int_if_need))
-tot.final <- abundTab %>% column_to_rownames('AUID') %>% as.matrix() %>% sum()
+tot.final <- abundTab %>%
+    column_to_rownames("AUID") %>%
+    as.matrix() %>%
+    sum()
 x <- abs(tot.final - tot.initial)
 if (x > 0) {
-    cat("This changed the total number of reads from", tot.initial, "to", tot.final,"\n",
-        "a change of", x, "reads.\n")
+    cat(
+        "This changed the total number of reads from", tot.initial, "to", tot.final, "\n",
+        "a change of", x, "reads.\n"
+    )
 } else {
     cat("After this step there are still", tot.initial, "reads.\n")
 }
@@ -240,35 +268,36 @@ if (x > 0) {
 ##
 cat("Checking consistency of data tables (e.g. same ASVs and samples).\n")
 if (!KEEP_SAMPS_MISSING_META_OR_CMAP_DATA) {
-    stopifnot(setdiff(colnames(abundTab), metaTab$SAMPLEID) == 'AUID')  # Metadata for all samps
-    stopifnot(setdiff(colnames(abundTab), cmapTab$SAMPLEID) == 'AUID')  # CMAP for all samps
+    stopifnot(setdiff(colnames(abundTab), metaTab$SAMPLEID) == "AUID") # Metadata for all samps
+    stopifnot(setdiff(colnames(abundTab), cmapTab$SAMPLEID) == "AUID") # CMAP for all samps
 }
-stopifnot(colnames(abundTab) == colnames(relabundTab))                  # Samps 1:1 in abund tables
-stopifnot(abundTab$AUID == relabundTab$AUID)                            # ASVs 1:1 in abund tables
-stopifnot(setequal(asvSeqs$AUID,abundTab$AUID))                         # ASVs 1:1 with fasta
+stopifnot(colnames(abundTab) == colnames(relabundTab)) # Samps 1:1 in abund tables
+stopifnot(abundTab$AUID == relabundTab$AUID) # ASVs 1:1 in abund tables
+stopifnot(setequal(asvSeqs$AUID, abundTab$AUID)) # ASVs 1:1 with fasta
 stopifnot(asvCyanos %in% abundTab$AUID)
 stopifnot(asvNCDs %in% abundTab$AUID)
 
 save(asvSeqs, abundTab, relabundTab, annotTab,
-     metaTab, cmapTab, 
-     asvCyanos, asvNCDs,
-     GetTaxa,
-     workspaceObjectDescriptions,
-     file="workspace.RData")
+    metaTab, cmapTab,
+    asvCyanos, asvNCDs,
+    GetTaxa,
+    workspaceObjectDescriptions,
+    file = "workspace.RData"
+)
 cat("\nSaved workspace.RData which contains the following:")
-cat(workspaceObjectDescriptions,"\n")
+cat(workspaceObjectDescriptions, "\n")
 cat("The workspace objects can be used with R tidyverse, or without. No R packages are required.\n\n")
 
 ## Create the nifH ASV database
-wdir <- 'nifH_ASV_database'
+wdir <- "nifH_ASV_database"
 dir.create(wdir)
-x <- file.copy(args['fasta'], file.path(wdir,'asvSeqs.fasta'))  # FASTA with original deflines, not asvSeqs
-write_csv(abundTab,           file.path(wdir,'abundTab.csv'))
-write_csv(relabundTab,        file.path(wdir,'relabundTab.csv'))
-write_csv(annotTab,           file.path(wdir,'annotTab.csv'))
-write_csv(metaTab,            file.path(wdir,'metaTab.csv'))
-write_csv(cmapTab,            file.path(wdir,'cmapTab.csv'))
-writeLines(workspaceObjectDescriptions, file.path(wdir,'manifest.txt'))
+x <- file.copy(args["fasta"], file.path(wdir, "asvSeqs.fasta")) # FASTA with original deflines, not asvSeqs
+write_csv(abundTab, file.path(wdir, "abundTab.csv"))
+write_csv(relabundTab, file.path(wdir, "relabundTab.csv"))
+write_csv(annotTab, file.path(wdir, "annotTab.csv"))
+write_csv(metaTab, file.path(wdir, "metaTab.csv"))
+write_csv(cmapTab, file.path(wdir, "cmapTab.csv"))
+writeLines(workspaceObjectDescriptions, file.path(wdir, "manifest.txt"))
 cat("Wrote files comprising the nifH ASV database.\n")
 
-quit(save="no")
+quit(save = "no")
