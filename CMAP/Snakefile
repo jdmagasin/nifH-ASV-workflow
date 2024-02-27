@@ -2,28 +2,35 @@
 ##
 ## Snakefile file to mange the CMAP stage of the nifH ASV workflow ##
 ##  configfile is used to supply parameters to Snakefile
-
+##  A conda environment is created that encapulates the packages required run
+##  the CMAP stage so only Snakemake is required. Snakemake is able to be
+##  called if nifH_ASV_workflow environment is loaded.
+##
 ##  Description:
 ##  CMAP Data Colocalization ##
-##  Colocalizes input data with CMAP (Simons Collaboration on Ocean Processes and Ecology) data repositry and saves the colocalized dataset.
+##  Colocalizes input data with CMAP (Simons Collaboration on Ocean Processes
+##  and Ecology) data repositry and then returns a saved and compressed the
+##  colocalized dataset.
+##
 ##  Calls script: query_CMAP.py
-##      Takes CSV as input and colocalizes with specified targets in the CMAP 
+##      Takes CSV as input and colocalizes with specified targets in the CMAP
 ##      database, and saves the colocalized dataset as a compressed CSV file.
-## 
+##
 #!############ MODIFICATION OF THIS FILE (config.json) IS REQUIRE #############
 ##  Configfile: config.json
-#!#     MODIFY THIS TO BE YOUR API KEY as described at 
+#!#     MODIFY THIS TO BE YOUR API KEY as described at
 #       #!# https://simonscmap.com/documentation under Documentation/API Key.
 ##      #!# "api_key": ""
 ##
 ##
 ##
 ## Usage:
-##    snakemake -c 1 --use-conda          # Default. Retrieve CMAP data if 
-##                                          metadata.cmap.tsv changed.
-##    snakemake -c 1 --use-conda clean    # Remove CMAP_metadata.csv.gz
-##    snakemake -c 1 superclean           # Remove CMAP_metadata.csv.gz and log 
-##                                          directory.
+##    snakemake -c1 --use-conda          # Default. Retrieve CMAP data if
+##                                         metadata.cmap.tsv changed.
+##    snakemake -c1 clean                # Remove CMAP_metadata.csv.gz
+##    snakemake -c1 superclean           # Remove CMAP_metadata.csv.gz and log
+##                                         directory. Remove conda environment
+##                                         generated for the CMAP stage ONLY
 ##
 
 
@@ -33,6 +40,7 @@ configfile: "config.json"
 
 # Import the datetime module
 import datetime
+
 
 # Function to generate a timestamp
 def get_timestamp():
@@ -55,7 +63,7 @@ rule CMAP_query:
         "environments/CMAP_enviroments.yaml"
     shell:
         """
-        python3 scripts/query_CMAP.py --input {input} --output {output} --cmap_api_key {params.api_key} > {log} 2>&1
+        python3 scripts/query_CMAP.py {input} {output} --cmap_api_key {params.api_key} > {log} 2>&1
         """
 
 
@@ -70,7 +78,17 @@ rule clean:
 rule superclean:
     shell:
         """
-        echo "Cleaning all files"
+        echo "Cleaning all output files and directories"
+        echo "Removing conda environment made by this snakefile"
         snakemake -c 1 --use-conda --delete-all-output
-        rm -rf logs/
+        # Check if directory exists before removing it
+        if [ -d logs ]; then
+            rm -rf logs
+            echo "Directory 'logs' removed"
+        fi
+        # Check if directory exists before removing it
+        if [ -d .snakemake/conda ]; then
+            rm -r .snakemake/conda/
+            echo "Conda environment removed"
+        fi
         """
