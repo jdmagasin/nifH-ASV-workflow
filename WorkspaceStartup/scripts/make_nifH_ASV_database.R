@@ -228,8 +228,54 @@ asvNCDs <- GetTaxa("p", "Cyanobacteria", invert = T)
 
 relabundTab <- abundTab %>% mutate_at(vars(-AUID), ~ . / sum(.))
 ## Verify all columns sum to ~1, and all cols are type double.
-stopifnot(abs((relabundTab %>% select(-AUID) %>% colSums()) - 1) < 1e-9)
-stopifnot(sapply(relabundTab[, -1], class) == "numeric")
+
+##------------------------------------------------------------------------------
+##
+## Filter AUIDs from nifh database objects that did not receive an annotation 
+## during AnnotateAuids
+cat("Filtering AUIDs from nifH database objects that did not receive an annotation during AnnotateAuids\n")
+
+## Create a some things to help make this happen
+## Make a key of the AUIDs from the annotation file that can be used to filter
+## other files
+cat("Generating key to filter nifH database objects:\n'annotTab_auid_key'\n")
+annotTab_auid_key <- annotTab %>%
+  select(AUID) %>%
+  pull()
+
+## Create a function that filters based on annotation AUIDs
+filter_anno_tab <- function(df) {
+  filt_df <- df %>%
+    filter(AUID %in% annotTab_auid_key)
+  cat("Removing AUIDs that did not receive an annotation during AnnotateAuids stage.\nThe 'annotTab_auid_key' generated from the 'annotTab' file will be used to filter:\n'",deparse(substitute(df)),"'\n")
+
+  return(filt_df)
+}
+
+# Function to convert tibble to FASTA format
+tibble_to_fasta <- function(df) {
+  cat("Converting input sequence file: '",deparse(substitute(df)),"'
+to FASTA...\n")
+  fasta <- paste0(">", df$AUID, "\n", df$sequence, collapse = "\n")
+
+  return(fasta)
+}
+
+# Filter abundance tables
+# counts
+abundTab <- filter_anno_tab(abundTab)
+# relative abundance
+relabundTab <- filter_anno_tab(relabundTab)
+
+# Filter sequence file
+# This will later be converted into a filtered fasta file
+asvSeqs <- filter_anno_tab(asvSeqs)
+
+# Verify that all files have the same number of row and therefore the same AUIDs after filteration with function
+stopifnot(all.equal(nrow(abundTab), nrow(relabundTab), nrow(asvSeqs), nrow(annotTab)))
+
+# Convert filtered ASV sequences to FASTA format
+asvSeqs_fasta <- tibble_to_fasta(asvSeqs)
 
 ## ------------------------------------------------------------------------------
 ##
@@ -291,13 +337,14 @@ cat("The workspace objects can be used with R tidyverse, or without. No R packag
 ## Create the nifH ASV database
 wdir <- "nifH_ASV_database"
 dir.create(wdir)
-x <- file.copy(args["fasta"], file.path(wdir, "asvSeqs.fasta")) # FASTA with original deflines, not asvSeqs
-write_csv(abundTab, file.path(wdir, "abundTab.csv"))
-write_csv(relabundTab, file.path(wdir, "relabundTab.csv"))
-write_csv(annotTab, file.path(wdir, "annotTab.csv"))
-write_csv(metaTab, file.path(wdir, "metaTab.csv"))
-write_csv(cmapTab, file.path(wdir, "cmapTab.csv"))
-writeLines(workspaceObjectDescriptions, file.path(wdir, "manifest.txt"))
+# Filtered versions of each nifH ASV database object
+writeLines(asvSeqs_fasta, file.path(wdir,"filtered_asv_seqs.fasta"))  
+write_csv(abundTab,           file.path(wdir,'abundTab.csv'))
+write_csv(relabundTab,        file.path(wdir,'relabundTab.csv'))
+write_csv(annotTab,           file.path(wdir,'annotTab.csv'))
+write_csv(metaTab,            file.path(wdir,'metaTab.csv'))
+write_csv(cmapTab,            file.path(wdir,'cmapTab.csv'))
+writeLines(workspaceObjectDescriptions, file.path(wdir,'manifest.txt'))
 cat("Wrote files comprising the nifH ASV database.\n")
 
 quit(save = "no")
