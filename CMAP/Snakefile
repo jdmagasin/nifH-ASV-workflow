@@ -1,5 +1,6 @@
 ## Copyright (C) 2023 Mo Morando
 ##
+
 #_#  Snakefile file to mange the CMAP stage of the nifH ASV workflow ##
 #_#  Configfile is used to supply parameters to Snakefile ##
 
@@ -29,6 +30,7 @@
 ##    snakemake -c1 clean               # Remove CMAP_metadata.csv.gz
 ##    snakemake -c1 superclean          # Remove CMAP_metadata.csv.gz and log 
 ##                                        directory.
+
 ##
 
 
@@ -38,6 +40,7 @@ configfile: "config.json"
 
 # Import the datetime module
 import datetime
+
 
 # Function to generate a timestamp
 def get_timestamp():
@@ -60,7 +63,7 @@ rule CMAP_query:
         "environments/CMAP_enviroments.yaml"
     shell:
         """
-        python3 scripts/query_CMAP.py --input {input} --output {output} --cmap_api_key {params.api_key} > {log} 2>&1
+        python3 scripts/query_CMAP.py {input} {output} --cmap_api_key {params.api_key} > {log} 2>&1
         """
 
 
@@ -75,7 +78,17 @@ rule clean:
 rule superclean:
     shell:
         """
-        echo "Cleaning all files"
+        echo "Cleaning all output files and directories"
+        echo "Removing conda environment made by this snakefile"
         snakemake -c 1 --use-conda --delete-all-output
-        rm -rf logs/
+        # Check if directory exists before removing it
+        if [ -d logs ]; then
+            rm -rf logs
+            echo "Directory 'logs' removed"
+        fi
+        # Check if directory exists before removing it
+        if [ -d .snakemake/conda ]; then
+            rm -r .snakemake/conda/
+            echo "Conda environment removed"
+        fi
         """
