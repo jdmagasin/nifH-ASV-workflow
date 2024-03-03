@@ -1,36 +1,36 @@
 ## Copyright (C) 2023 Mo Morando
 ##
-## Snakefile file to mange the CMAP stage of the nifH ASV workflow ##
-##  configfile is used to supply parameters to Snakefile
-##  A conda environment is created that encapulates the packages required run
-##  the CMAP stage so only Snakemake is required. Snakemake is able to be
-##  called if nifH_ASV_workflow environment is loaded.
-##
+
+#_#  Snakefile file to mange the CMAP stage of the nifH ASV workflow ##
+#_#  Configfile is used to supply parameters to Snakefile ##
+
 ##  Description:
 ##  CMAP Data Colocalization ##
-##  Colocalizes input data with CMAP (Simons Collaboration on Ocean Processes
-##  and Ecology) data repositry and then returns a saved and compressed the
-##  colocalized dataset.
-##
-##  Calls script: query_CMAP.py
-##      Takes CSV as input and colocalizes with specified targets in the CMAP
-##      database, and saves the colocalized dataset as a compressed CSV file.
-##
+##      Colocalizes input data with CMAP (Simons Collaboration on Ocean 
+##      Processes and Ecology) data repositry and saves the colocalized dataset.
+##      Calls script: query_CMAP.py
+##          Takes CSV as input and colocalizes with specified targets in the 
+##          CMAP database, and saves the colocalized dataset as a compressed 
+##          CSV file.
+## 
+##  Parameters are passed via a config file. ##
 #!############ MODIFICATION OF THIS FILE (config.json) IS REQUIRE #############
 ##  Configfile: config.json
-#!#     MODIFY THIS TO BE YOUR API KEY as described at
-#       #!# https://simonscmap.com/documentation under Documentation/API Key.
-##      #!# "api_key": ""
+#!#     MODIFY "api_key": "" TO BE YOUR API KEY as described at 
+#!#      Your API key can be obtained here:
+#!#      https: //simonscmap.com/apikeymanagement
+##      
+##  After the addition of your API key to the config file, workflow can be run 
+##  as show below.
 ##
 ##
-##
-## Usage:
-##    snakemake -c1 --use-conda          # Default. Retrieve CMAP data if
-##                                         metadata.cmap.tsv changed.
-##    snakemake -c1 clean                # Remove CMAP_metadata.csv.gz
-##    snakemake -c1 superclean           # Remove CMAP_metadata.csv.gz and log
-##                                         directory. Remove conda environment
-##                                         generated for the CMAP stage ONLY
+##  Usage:
+##    snakemake -c1 --use-conda         # Default. Retrieve CMAP data if 
+##                                        metadata.cmap.tsv changed.
+##    snakemake -c1 clean               # Remove CMAP_metadata.csv.gz
+##    snakemake -c1 superclean          # Remove CMAP_metadata.csv.gz and log 
+##                                        directory.
+
 ##
 
 
