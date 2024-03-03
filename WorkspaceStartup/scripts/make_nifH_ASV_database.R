@@ -1,25 +1,26 @@
 #!/usr/bin/env Rscript
 
 ##
-## Make the nifH ASV database (nifH_ASV_database.tgz) and an associated workspace.RData that
-## can be used to jumpstart subsequent analysis.  The following kinds of information are in
-## the database:
+## Make the nifH ASV database (nifH_ASV_database.tgz) and an associated 
+## workspace.RData that can be used to jumpstart subsequent analysis. The 
+## following kinds of information are in the database:
 ##    AUIDs:    Sequences, abundance counts, annotation
 ##    Samples:  Associated metadata and environmental data
-## and are described in workspaceObjectDescriptions below.
+##    and are described in workspaceObjectDescriptions below.
 ##
 ## Usage*:
-##   make_nifH_ASV_database.R  asvAbunds.tsv  asv.fas  asvAnnot.tsv  sampMeta.tsv  cmapData.csv
+##   make_nifH_ASV_database.R  <asvAbunds.tsv>  <asv.fas>  <asvAnnot.tsv>  <sampMeta.tsv>  <cmapData.csv>
 ##
 ## *Intended to be called by the Makefile. Not a tool.
 ##
 
 workspaceObjectDescriptions <- "
   These objects comprise the nifH ASV database:
-     asvSeqs      ASV sequences, 1:1 with abundTab. Each ASV has an ID of the form 'AUID.<number>'.
-                  The number only ensures uniqueness.  It does not indicate the ASV's abundance.
-     abundTab     ASV abundance counts for all retained samples.  Every count is an integer so the
-                  able will work with the R vegan package.
+     asvSeqs      ASV sequences, 1:1 with abundTab. Each ASV has an ID of the   
+                  form 'AUID.<number>'. The number only ensures uniqueness.  It 
+                  does not indicate the ASV's abundance.
+     abundTab     ASV abundance counts for all retained samples.  Every count 
+                  is an integer so the able will work with the R vegan package.
      relabundTab  ASV relative abundances for all retained samples.
      annotTab     Annotation for ASVs in abundTab.
      metaTab      Metadata for samples in abundTab.
@@ -28,8 +29,8 @@ workspaceObjectDescriptions <- "
   The workspace.RData includes the above as well as the following:
      asvCyanos    Cyanobacteria ASVs based on best hit in Genome879.
      asvNCDs      Non-cyanobacgteria ASVs based on best hit in Genome879.
-     GetTaxa()    Find ASVs with a specified taxonomic level (kingdom to genus) based on the ASV's
-                  best hit in Genome879.  Documentation is within the function comments.
+     GetTaxa()    Find ASVs with a specified taxonomic level (kingdom to genus) 
+                  based on the ASV's best hit in Genome879. Documentation is within the function comments.
 "
 
 
