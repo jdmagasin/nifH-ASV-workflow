@@ -1,12 +1,12 @@
 #!/usr/bin/env Rscript
 
 ##
-## Make the nifH ASV database (nifH_ASV_database.tgz) and an associated 
-## workspace.RData that can be used to jumpstart subsequent analysis. The 
-## following kinds of information are in the database:
+## Make the nifH ASV database (nifH_ASV_database.tgz) and an associated workspace.RData that
+## can be used to jumpstart subsequent analysis.  The following kinds of information are in
+## the database:
 ##    AUIDs:    Sequences, abundance counts, annotation
 ##    Samples:  Associated metadata and environmental data
-##    and are described in workspaceObjectDescriptions below.
+## and are described in workspaceObjectDescriptions below.
 ##
 ## Usage*:
 ##   make_nifH_ASV_database.R  <asvAbunds.tsv>  <asv.fas>  <asvAnnot.tsv>  <sampMeta.tsv>  <cmapData.csv>
@@ -16,11 +16,10 @@
 
 workspaceObjectDescriptions <- "
   These objects comprise the nifH ASV database:
-     asvSeqs      ASV sequences, 1:1 with abundTab. Each ASV has an ID of the   
-                  form 'AUID.<number>'. The number only ensures uniqueness.  It 
-                  does not indicate the ASV's abundance.
-     abundTab     ASV abundance counts for all retained samples.  Every count 
-                  is an integer so the able will work with the R vegan package.
+     asvSeqs      ASV sequences, 1:1 with abundTab. Each ASV has an ID of the form 'AUID.<number>'.
+                  The number only ensures uniqueness.  It does not indicate the ASV's abundance.
+     abundTab     ASV abundance counts for all retained samples.  Every count is an integer so the
+                  able will work with the R vegan package.
      relabundTab  ASV relative abundances for all retained samples.
      annotTab     Annotation for ASVs in abundTab.
      metaTab      Metadata for samples in abundTab.
@@ -29,8 +28,8 @@ workspaceObjectDescriptions <- "
   The workspace.RData includes the above as well as the following:
      asvCyanos    Cyanobacteria ASVs based on best hit in Genome879.
      asvNCDs      Non-cyanobacgteria ASVs based on best hit in Genome879.
-     GetTaxa()    Find ASVs with a specified taxonomic level (kingdom to genus) 
-                  based on the ASV's best hit in Genome879. Documentation is within the function comments.
+     GetTaxa()    Find ASVs with a specified taxonomic level (kingdom to genus) based on the ASV's
+                  best hit in Genome879.  Documentation is within the function comments.
 "
 
 
@@ -148,11 +147,11 @@ cat("Loading annotation...")
 ## Load annotation for ASVs in the abundance table, and split the Genome879
 ## taxa string.
 annotTab <- read_tsv(args["annotTsv"], col_types = cols()) %>%
-    filter(AUID %in% abundTab$AUID) %>%
+  arrange(desc(AUID))  #%>% 
     separate(
-        col = Genome879.tax,
-        sep = ";", paste0("Genome879.", c("k", "p", "c", "o", "f", "g"))
-    )
+      col = Genome879.tax,
+      sep = ";", paste0("Genome879.", c("k", "p", "c", "o", "f", "g"))
+  )
 cat("done.\n")
 
 
@@ -177,8 +176,6 @@ asvSeqs <- tibble(
     sequence = fas[idx.seqs]
 )
 cat("Loaded", nrow(asvSeqs), "ASVs.  ")
-stopifnot(setequal(asvSeqs$AUID, abundTab$AUID))
-cat("ASVs in FASTA and abundance table are 1:1.\n")
 rm(idx.defs, idx.seqs)
 
 
@@ -229,54 +226,52 @@ asvNCDs <- GetTaxa("p", "Cyanobacteria", invert = T)
 
 relabundTab <- abundTab %>% mutate_at(vars(-AUID), ~ . / sum(.))
 ## Verify all columns sum to ~1, and all cols are type double.
+stopifnot(abs((relabundTab %>% select(-AUID) %>% colSums()) - 1) < 1e-9)
+stopifnot(sapply(relabundTab[, -1], class) == "numeric")
 
-##------------------------------------------------------------------------------
+
+## ------------------------------------------------------------------------------
 ##
 ## Filter AUIDs from nifh database objects that did not receive an annotation 
 ## during AnnotateAuids
-cat("Filtering AUIDs from nifH database objects that did not receive an annotation during AnnotateAuids\n")
-
-## Create a some things to help make this happen
-## Make a key of the AUIDs from the annotation file that can be used to filter
-## other files
-cat("Generating key to filter nifH database objects:\n'annotTab_auid_key'\n")
-annotTab_auid_key <- annotTab %>%
-  select(AUID) %>%
-  pull()
+cat("\nFiltering AUIDs from nifH database objects that did not receive an annotation during AnnotateAuids\n")
 
 ## Create a function that filters based on annotation AUIDs
-filter_anno_tab <- function(df) {
+## Returns a filtered df
+filter_by_annotTab_auid <- function(df) {
+  ## Make a key of the AUIDs from the annotation table to filter input df
+  annotTab_auid_key <- annotTab %>%
+  select(AUID) %>%
+  pull()
+  # filter input df with auid key and rearrange order
   filt_df <- df %>%
-    filter(AUID %in% annotTab_auid_key)
-  cat("Removing AUIDs that did not receive an annotation during AnnotateAuids stage.\nThe 'annotTab_auid_key' generated from the 'annotTab' file will be used to filter:\n'",deparse(substitute(df)),"'\n")
+    filter(AUID %in% annotTab_auid_key)  %>% 
+    arrange(desc(AUID))
+  # Create print statement for number of rows removed
+  rows_removed = nrow(df) - nrow(filt_df)
+  cat("Number of rows removed from:'", deparse(substitute(df)), "':\n", rows_removed,"\n")
 
   return(filt_df)
 }
 
-# Function to convert tibble to FASTA format
-tibble_to_fasta <- function(df) {
-  cat("Converting input sequence file: '",deparse(substitute(df)),"'
-to FASTA...\n")
-  fasta <- paste0(">", df$AUID, "\n", df$sequence, collapse = "\n")
-
-  return(fasta)
-}
-
 # Filter abundance tables
-# counts
-abundTab <- filter_anno_tab(abundTab)
-# relative abundance
-relabundTab <- filter_anno_tab(relabundTab)
+abundTab <- filter_by_annotTab_auid(abundTab)
+relabundTab <- filter_by_annotTab_auid(relabundTab)
 
 # Filter sequence file
-# This will later be converted into a filtered fasta file
-asvSeqs <- filter_anno_tab(asvSeqs)
+asvSeqs <- filter_by_annotTab_auid(asvSeqs)
 
-# Verify that all files have the same number of row and therefore the same AUIDs after filteration with function
-stopifnot(all.equal(nrow(abundTab), nrow(relabundTab), nrow(asvSeqs), nrow(annotTab)))
+# Verify that all files now have the same number the same AUIDs in the same order after filteration with function
+stopifnot(identical(asvSeqs$AUID, abundTab$AUID) &&
+identical(asvSeqs$AUID, relabundTab$AUID) &&
+identical(asvSeqs$AUID, annotTab$AUID))
 
 # Convert filtered ASV sequences to FASTA format
-asvSeqs_fasta <- tibble_to_fasta(asvSeqs)
+# Double check this this is ok to do
+stopifnot(setequal(asvSeqs$AUID, abundTab$AUID))
+cat("ASVs in FASTA and abundance table are 1:1.\n")
+asvSeqs_fasta <- paste0(">", asvSeqs$AUID, "\n", asvSeqs$sequence, collapse = "\n")
+
 
 ## ------------------------------------------------------------------------------
 ##
