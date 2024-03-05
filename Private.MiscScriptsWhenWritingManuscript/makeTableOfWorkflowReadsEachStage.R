@@ -275,7 +275,7 @@ cat("Preparing plot that shows for each study how the workflow progressed",
 
 ## In the plot use more intuitive, shorter names than in workflowTable. For now...
 stageRename <- c(ReadsPipeline                     = 'From pipeline',
-                 ReadsGatherAsvs                   = 'Gather ASVs',
+                 ReadsGatherAsvs                   = 'GatherAsvs',
                  ReadsFilterAuids.Rare             = 'Rare',
                  ReadsFilterAuids.NonNifH          = 'Not nifH-like',
                  ReadsFilterAuids.Length           = 'Too short or long')
@@ -335,9 +335,11 @@ cat("Plotting...\n")
 ## tell if a read that was lost due to being in a chimera would have later been
 ## lost for lack of CMAP data.)
 ## Very thin violins so the jitter is important.
+sfb <- scale_fill_brewer(palette = 'Set3', type = 'qual')
+scb <- scale_color_brewer(palette = 'Set3', type = 'qual')
 g.box <- ggplot(dat.m, aes(Filter, value, fill=Filter)) +
            geom_violin() + geom_jitter(aes(color=Filter), size=0.5, alpha=0.5) +
-           coord_flip() +
+           coord_flip() + sfb + scb +
            theme_bw() + labs(x=NULL,y='% pipeline reads lost at stage') +
            guides(color = 'none') +  # color legend (jitter) is redundant
            guides(fill = guide_legend(reverse = TRUE)) +
@@ -347,7 +349,7 @@ ggsave(filename='workflowReadsRetainedEachStage.png', plot=g.box, width=11.5, he
 ## Also make an overall plot (all samples across all studies).  Drop legend and
 ## labels since will manually layout to use those from plot above.
 g.box <- ggplot(dat.m, aes(Filter, value, fill=Filter)) +
-           geom_violin() + coord_flip() +
+           geom_violin() + coord_flip() + sfb +
            theme_bw() + theme(axis.text.y = element_blank()) +
            labs(x = element_blank(), y = element_blank()) +
            guides(fill = 'none')   # Use legend of main plot
@@ -356,7 +358,7 @@ ggsave(filename='workflowReadsRetainedEachStage_overall_violin.png', plot=g.box,
 
 ## Box plot might look better.
 g.box <- ggplot(dat.m, aes(Filter, value, fill=Filter)) +
-           geom_boxplot(outlier.size=0.5, outlier.alpha=0.5) + coord_flip() +
+           geom_boxplot(outlier.size=0.5, outlier.alpha=0.5) + coord_flip() + sfb +
            theme_bw() + theme(axis.text.y = element_blank()) +
            labs(x = element_blank(), y = element_blank()) +
            guides(fill = 'none')   # Use legend of main plot
