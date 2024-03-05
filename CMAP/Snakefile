@@ -1,11 +1,36 @@
 ## Copyright (C) 2023 Mo Morando
 ##
 
+#_#  Snakefile file to mange the CMAP stage of the nifH ASV workflow ##
+#_#  Configfile is used to supply parameters to Snakefile ##
 
+##  Description:
+##  CMAP Data Colocalization ##
+##      Colocalizes input data with CMAP (Simons Collaboration on Ocean 
+##      Processes and Ecology) data repositry and saves the colocalized dataset.
+##      Calls script: query_CMAP.py
+##          Takes CSV as input and colocalizes with specified targets in the 
+##          CMAP database, and saves the colocalized dataset as a compressed 
+##          CSV file.
+## 
+##  Parameters are passed via a config file. ##
+#!############ MODIFICATION OF THIS FILE (config.json) IS REQUIRE #############
+##  Configfile: config.json
+#!#     MODIFY "api_key": "" TO BE YOUR API KEY as described at 
+#!#      Your API key can be obtained here:
+#!#      https: //simonscmap.com/apikeymanagement
+##      
+##  After the addition of your API key to the config file, workflow can be run 
+##  as show below.
 ##
-## Usage:
-##    snakemake -c 1 --use-conda       # Default. Get CMAP data if metadata.cmap.tsv changed.
-##    snakemake -c 1 --use-conda clean # Remove CMAP_metadata.csv.gz
+##
+##  Usage:
+##    snakemake -c1 --use-conda         # Default. Retrieve CMAP data if 
+##                                        metadata.cmap.tsv changed.
+##    snakemake -c1 clean               # Remove CMAP_metadata.csv.gz
+##    snakemake -c1 superclean          # Remove CMAP_metadata.csv.gz and log 
+##                                        directory.
+
 ##
 
 
@@ -16,11 +41,10 @@ configfile: "config.json"
 # Import the datetime module
 import datetime
 
-# Get the current date and time as a string
-timestamp = datetime.datetime.now().strftime("%Y%m%d")
 
-# Use the timestamp in the log file name
-logfile = "log_{}.txt".format(timestamp)
+# Function to generate a timestamp
+def get_timestamp():
+    return datetime.datetime.now().strftime("%Y%m%d")
 
 
 rule CMAP_query:
@@ -31,12 +55,15 @@ rule CMAP_query:
     params:
         api_key=config["api_key"],
     log:
-        logfile,
+        expand(
+            "logs/cmap_query_{timestamp}.log",
+            timestamp=get_timestamp(),
+        ),
     conda:
         "environments/CMAP_enviroments.yaml"
     shell:
         """
-        python3 scripts/query_CMAP.py --input {input} --output {output} --cmap_api_key {params.api_key} > {log} 2>&1
+        python3 scripts/query_CMAP.py {input} {output} --cmap_api_key {params.api_key} > {log} 2>&1
         """
 
 
@@ -48,10 +75,20 @@ rule clean:
         """
 
 
-rule clean_all:
+rule superclean:
     shell:
         """
-        echo "Cleaning all files"
+        echo "Cleaning all output files and directories"
+        echo "Removing conda environment made by this snakefile"
         snakemake -c 1 --use-conda --delete-all-output
-        rm -f {logfile}
+        # Check if directory exists before removing it
+        if [ -d logs ]; then
+            rm -rf logs
+            echo "Directory 'logs' removed"
+        fi
+        # Check if directory exists before removing it
+        if [ -d .snakemake/conda ]; then
+            rm -r .snakemake/conda/
+            echo "Conda environment removed"
+        fi
         """

@@ -6,19 +6,25 @@
 ##  2. BlastxGenome879        - Blastx ASVs against the Zehr Lab's database with
 ##                              879 diazotroph genomes.
 ##  3. NifHClustersFrank2016  - Determine nifH clusters for each ASV using the
-##                              classification and regression tree (CART) approach
+##                              classification and regression tree (CART) 
+##								approach
 ##                              of Frank et al. 2016.
 ##
-## Also search for the ASVs in a DB with 267 nifH sequences from cyanobacteria
-## and NCDs. Forty-four of these nifH are from oligotyping, 38 from metagenome
-## assembly.
+##  4. Marine_NCD_cyano_refsequences
+##                             -  223 nifH sequences from selected
+##                                cyanobacteria and NCDs to provide increased
+##                                resolution.
+##  5. UCYNA_oligoreps         -  Forty-four UNCY-A oligotypes, thirty-eight
+##                                from metagenome assembly, to provide increase ##                                resolution of UCYN-A ASVs.
+##
 ##
 ## This Makefile runs each of the annotation tools, then searches the cyano /
-## NCD DB, and then stitches together all the results into auids.annot.tsv,
-## using scripts/makeAnnotationTable.R
+## NCD DB, the UCYN-A oligos DB, and then stitches together all the results 
+## into auids.annot.tsv, using scripts/makeAnnotationTable.R. A consensus ID is then assigned based on hierarchical script, make_consensus_taxonomy.py, and output the final annotation table auids.annot.consensus.tsv.
 ##
 ## Usage:
-##    make                # Generate all annotation types.  Make auids.annot.tsv
+##    make                #   Generate all annotation types.  
+##							  Make auids.annot.consensus.tsv
 ##    make ARB2017        #   Do just the blastn against ARB 2017
 ##    make Genome879      #   Do just the blastx against Genome879
 ##    make Clusters       #   Do just the nifH cluster classifications
@@ -32,10 +38,13 @@ SHELL=/usr/bin/bash
 
 ## Input: The fasta from FilterAuids
 AUID_FASTA=$(shell realpath ../FilterAuids/auid.filtered.fasta)
+# AUID_FASTA=$(shell realpath ../FilterAuids/auid.filtered.nifHDB.fasta)
 
 ## Output (main):  Table with all annottion
 ANNOT_TAB=auids.annot.tsv
 
+## Output (consensus taxonomy): Table with consensus taxonomy ID added
+CONS_TAXONOMY_TAB=auids.annot.consensus.tsv
 
 ## The tools. All are sym-links in the pipeline's 'bin'
 BLASTNARB2017=$(shell which blastnARB2017.sh)
@@ -75,6 +84,18 @@ NCDCYANO_ALN=$(addprefix $(NCDCYANO_DIR)/, blastn_NCD_cyano.$(NCDCYANO_DESC).aln
 NCDCYANO_OUTS=$(NCDCYANO_TAB) $(NCDCYANO_ALN)
 
 
+## UCYN-A nifH reference sequences (~267 total)
+OLIGOS_DIR=UCYNA_oligoreps
+OLIGOS_LOG=log.marine_NCD_cyano.txt
+OLIGOS_FASTA=$(shell realpath data/UCYNA_oligoreps/UCYNA_oligoreps.fasta.gz)
+OLIGOS_PCTID=97
+OLIGOS_QRYCVG=70
+OLIGOS_DESC=$(OLIGOS_PCTID)pid.$(OLIGOS_QRYCVG)cvg
+OLIGOS_TAB=$(addprefix $(OLIGOS_DIR)/, blastn_NCD_cyano.$(OLIGOS_DESC).tab)
+OLIGOS_ALN=$(addprefix $(OLIGOS_DIR)/, blastn_NCD_cyano.$(OLIGOS_DESC).aln.gz)
+OLIGOS_OUTS=$(OLIGOS_TAB) $(OLIGOS_ALN)
+
+
 ## NifH clusters
 NIFHCLUST_DIR=Classify_NifH_Clusters
 NIFHCLUST_LOG=log.nifH_clusters.txt
@@ -83,16 +104,18 @@ NIFHCLUST_MAP=$(word 1, $(NIFHCLUST_OUTS))
 
 
 ## Marine NCD and cyanobacteria nifH reference sequences (~267 total)
-all: $(ANNOT_TAB)
+all: $(ANNOT_TAB) $(CONS_TAXONOMY_TAB)
 
 clean:
-	@echo "Removing $(ANNOT_TAB)"
+	@echo "Removing $(ANNOT_TAB) $(CONS_TAXONOMY_TAB)"
 	@if [ -f "$(ANNOT_TAB)" ] ; then rm "$(ANNOT_TAB)" ; fi
+	@if [ -f "$(CONS_TAXONOMY_TAB)" ] ; then rm "$(CONS_TAXONOMY_TAB)" ; fi
 
 superclean:
-	@echo "Removing $(ANNOT_TAB) and all annotation working directories."
+	@echo "Removing $(ANNOT_TAB), $(CONS_TAXONOMY_TAB), and all annotation working directories."
 	@if [ -f "$(ANNOT_TAB)" ] ; then rm "$(ANNOT_TAB)" ; fi
-	@for x in $(ARB2017_DIR) $(GENOME879_DIR) $(NIFHCLUST_DIR) $(NCDCYANO_OUTS); do \
+	@if [ -f "$(CONS_TAXONOMY_TAB)" ] ; then rm "$(CONS_TAXONOMY_TAB)" ; fi
+	@for x in $(ARB2017_DIR) $(GENOME879_DIR) $(NIFHCLUST_DIR) $(NCDCYANO_DIR) $(OLIGOS_DIR); do \
 	    if [ -d "$$x" ] ; then rm -r "$$x"; fi \
 	done
 
@@ -104,11 +127,13 @@ Clusters : $(NIFHCLUST_OUTS)
 
 NCD_cyano: $(NCDCYANO_OUTS)
 
+UCYNA_oligos: $(OLIGOS_OUTS)
+
 
 ## Note the use of the cluster .map file.
-$(ANNOT_TAB): $(ARB2017_OUTS) $(GENOME879_OUTS) $(NCDCYANO_OUTS) $(NIFHCLUST_OUTS)
+$(ANNOT_TAB): $(ARB2017_OUTS) $(GENOME879_OUTS) $(NCDCYANO_OUTS) $(OLIGOS_OUTS) $(NIFHCLUST_OUTS)
 	@echo ">>>>> Combining all annotation into one table $(ANNOT_TAB) <<<<<"
-	@scripts/makeAnnotationTable.R $(ARB2017_TAB) $(GENOME879_TAB) $(NCDCYANO_TAB) $(NIFHCLUST_MAP)
+	@scripts/makeAnnotationTable.R $(ARB2017_TAB) $(GENOME879_TAB) $(NCDCYANO_TAB) $(OLIGOS_TAB) $(NIFHCLUST_MAP)
 	@echo ">>>>> Finished combining annotation <<<<<"
 	@echo
 
@@ -164,4 +189,32 @@ $(NCDCYANO_OUTS) &: $(AUID_FASTA) $(NCDCYANO_FASTA)
 	echo "Cleaning up" ; \
 	rm asn.tmp NCD_cyano_nifH.n??
 	@echo ">>>>> Finished searching additional reference nifH <<<<<"
+	@echo
+
+
+# Make the DB, then search and save as ASN.1. Then create tabular and alignment outputs.
+$(OLIGOS_OUTS) &: $(AUID_FASTA) $(OLIGOS_FASTA)
+	@echo ">>>>> Searching AUIDs against additional reference nifH from UCYN-A oligos <<<<<"
+	@mkdir -p $(OLIGOS_DIR) ; \
+	cd $(OLIGOS_DIR) ; \
+	echo "Making database" ; \
+	cat $(OLIGOS_FASTA) | gunzip \
+	  | makeblastdb -dbtype nucl -title UCYNA_oligos_nifH -out UCYNA_oligos_nifH ; \
+	echo "Searching database" ; \
+	blastn -db UCYNA_oligos_nifH -query $(AUID_FASTA) \
+	    -perc_identity $(OLIGOS_PCTID) -qcov_hsp_perc $(OLIGOS_QRYCVG) -outfmt 11 > asn.tmp ; \
+	echo "Reformatting output" ; \
+	blast_formatter -archive asn.tmp -outfmt 0 -num_alignments 10 -num_descriptions 100 \
+	  | gzip > `basename $(OLIGOS_ALN)` ; \
+	blast_formatter -archive asn.tmp -outfmt 6 > `basename $(OLIGOS_TAB)` ; \
+	echo "Cleaning up" ; \
+	rm asn.tmp UCYNA_oligos_nifH.n??
+	@echo ">>>>> Finished searching additional reference nifH <<<<<"
+	@echo
+
+## Consensus taxonomy table
+$(CONS_TAXONOMY_TAB): $(ANNOT_TAB)
+	@echo ">>>>> Creating consensus taxonomy table $(CONS_TAXONOMY_TAB) <<<<<"
+	@python scripts/make_consensus_taxonomy.py --annotation_table $(ANNOT_TAB) --output_table $(CONS_TAXONOMY_TAB)
+	@echo ">>>>> Finished creating consensus taxonomy table <<<<<"
 	@echo

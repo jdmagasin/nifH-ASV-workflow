@@ -27,14 +27,15 @@ dependencies:
 
   # DADA2 nifH pipeline ancillary scripts
   #                                 Needed by:
-  - r-digest           >=0.6.27     #  assignAUIDs2ASVs.R
-  - fastqc             >=0.12.1     #  do_fastqc.sh
-  - vsearch            >=2.22.1     #  check_chimera_denovo.sh
-  - blast              >=2.14.0     #  check_nifH_contaminants.sh, classifyNifH.sh, blast{nARB2017,xGenome879}.sh
-  - biopython          >=1.81       #  assignNifHclustersToNuclSeqs.sh
+  - r-digest           >=0.6.27 #  assignAUIDs2ASVs.R
+  - fastqc             >=0.12.1 #  do_fastqc.sh
+  - vsearch            >=2.22.1 #  check_chimera_denovo.sh
+  - blast              >=2.14.0 #  check_nifH_contaminants.sh, classifyNifH.sh, blast{nARB2017,xGenome879}.sh
+  - biopython          >=1.81 #  assignNifHclustersToNuclSeqs.sh
 
   # External tools required by the ASV workflow
-  - make               >=4.3        # Most stages use Makefiles
-  - snakemake          >=7.32.4     # CMAP stage uses Snakemake
-  - r-lutz             >=0.3.1      # Needed by GatherMetadata
-  - r-tidyverse        >=1.3        # Needed by WorkspaceStartup
+  - make               >=4.3 # Most stages use Makefiles
+  - snakemake          >=7.32.4 # CMAP stage uses Snakemake
+  - pandas             =2.1.2 # Used in AnnotateAuids
+  - r-lutz             >=0.3.1 # Needed by GatherMetadata
+  - r-tidyverse        >=1.3 # Needed by WorkspaceStartup
