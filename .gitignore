@@ -132,3 +132,8 @@ htmlcov
 envs/
 
 .snakemake
+
+
+# Private workspace directories #
+#################################
+./Private.*
