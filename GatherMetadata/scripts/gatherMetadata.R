@@ -326,7 +326,7 @@ cat("\nMissing data check:  For each column here are the percentages of NA's\n",
     "in each of the", nrow(metaTab), "total rows of the metadata table.\n")
 print(round(100*apply(metaTab, 2, function(v) sum(is.na(v)))/nrow(metaTab)))
 
-write.table(metaTab, 'metadata.tsv', sep="\t", row.names=F)
-cat("\nWrote out metadata.tsv which has",nrow(metaTab),"samples [rows]",
+write.table(metaTab, 'metadata.csv', sep=",", row.names=F)
+cat("\nWrote out metadata.csv which has",nrow(metaTab),"samples [rows]",
     "and",ncol(metaTab),"fields. Done!\n\n")
 quit('no')

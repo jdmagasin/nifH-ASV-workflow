@@ -7,7 +7,7 @@
 ## Outputs:
 ##  - studyID_metadata.csv     Concatenated metadata tables from all studies
 ##
-##  - metadata.tsv             Cleanup up version of previous.  Just the fields
+##  - metadata.csv             Cleanup up version of previous.  Just the fields
 ##                             needed, standardized and quality checked.  Some
 ##                             studies use the same sample ID for their DNA and
 ##                             cDNA sequencing runs. To ensure unique sample IDs
@@ -15,13 +15,13 @@
 ##                             the ID for all metatranscriptomic samples.
 ##
 ##  - metatranscriptomic_samples.txt   Transcriptomic sample IDs without
-##                             "_transcriptomic" appended as in metadata.tsv.
+##                             "_transcriptomic" appended as in metadata.csv.
 ##
 ##  - samples_need_CMAP.txt    Samples that need CMAP environmental data.  This
 ##                             is created from the column names in the filtered
 ##                             abundance table from FilterAuids.
 ##
-##  - metadata.cmap.tsv        Modified version of metadata.tsv with fields
+##  - metadata.cmap.csv        Modified version of metadata.csv with fields
 ##                             formatted for use as CMAP queries.
 ##
 ## Usage:
@@ -31,7 +31,7 @@
 
 SHELL=/usr/bin/bash
 
-targets=studyID_metadata.csv metadata.tsv metadata.cmap.tsv metatranscriptomic_samples.txt \
+targets=studyID_metadata.csv metadata.csv metadata.cmap.csv metatranscriptomic_samples.txt \
         samples_need_CMAP.txt
 
 all: $(targets)
@@ -62,7 +62,7 @@ studyID_metadata.csv: ../Data/StudyMetadata/*
 ## transcriptomic samples (saving IDs to a file) and makes some value tweaks to
 ## avoid conflicts when merging tables.  SEE WARNING MESSAGES written to stdout
 ## by the script.
-metadata.tsv metatranscriptomic_samples.txt: studyID_metadata.csv
+metadata.csv metatranscriptomic_samples.txt: studyID_metadata.csv
 	@echo ">>>>> Merging sample metadata tables <<<<<"
 	@echo "This step makes $@"
 	@scripts/gatherMetadata.R
@@ -76,7 +76,7 @@ metadata.tsv metatranscriptomic_samples.txt: studyID_metadata.csv
 
 
 ## Get a list (one file per line) of the samples in the abundance table.  We
-## want only these samples in metadata.cmap.tsv so that the CMAP stage only asks
+## want only these samples in metadata.cmap.csv so that the CMAP stage only asks
 ## for environmental data for samples with ASV data.
 ## Note that sed is used grab the sample ID by stripping of the tag preceding ___.
 samples_need_CMAP.txt: ../FilterAuids/auid.abundances.filtered.tsv.gz
@@ -86,7 +86,7 @@ samples_need_CMAP.txt: ../FilterAuids/auid.abundances.filtered.tsv.gz
 	@echo ">>>>> Finished determining samples that need CMAP data. <<<<<"
 	@echo
 
-metadata.cmap.tsv: metadata.tsv samples_need_CMAP.txt
+metadata.cmap.csv: metadata.csv samples_need_CMAP.txt
 	@echo ">>>>> Standardizing metadata values when possible (dates, lat/lon) <<<<<"
 	@echo "This step makes $@"
 	@scripts/prepareMetadataForCmap.R

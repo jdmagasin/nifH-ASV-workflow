@@ -23,7 +23,7 @@ cat("Checking with match() whether AUID sample names (columns) can be looked up 
      "SAMPLEIDs.  For this script use everything after the \"___\" in the AUID column\n",
      "(i.e. drop the tags preceding the \"___\") as the sample name.\n\n")
 
-mSampIds <- read.table('metadata.tsv', header=T)$SAMPLEID
+mSampIds <- read.table('metadata.csv', sep=',', header=T)$SAMPLEID
 stopifnot(!(table(mSampIds) > 1))
 mSampIds <- unique(sub('_transcriptomic$', '', mSampIds))  # Use original sample ID for metaT's
 

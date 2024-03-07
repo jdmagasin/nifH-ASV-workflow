@@ -11,11 +11,11 @@
 ##  to differently formatted Collection_Date's.
 ##
 
-metadata <- read.table('metadata.tsv', header=T, check.names=F, stringsAsFactors=T)
+metadata <- read.table('metadata.csv', sep=',', header=T, check.names=F, stringsAsFactors=T)
 sampsNeeded <- unique(readLines('samples_need_CMAP.txt'))
 
 ## gatherMetadata.R tacks on "_transcriptomic" to RNA sample names that will appear
-## in metadata.tsv, but _transcriptomic is not in the abundance table column names
+## in metadata.csv, but _transcriptomic is not in the abundance table column names
 ## and thus it is not in sampsNeeded. Drop _transcriptomic for the following check.
 simpleSampID <- sub('_transcriptomic$','',metadata$SAMPLEID)
 x <- setdiff(sampsNeeded, simpleSampID)
@@ -405,11 +405,11 @@ colnames(metadata) <- cnams
 ## API changes or bugs).
 wanted <- c('SAMPLEID', 'StudyID', 'lat', 'lon', 'time', 'depth')
 wanted <- c(wanted, colnames(metadata)[grep('^FIXME\\.',colnames(metadata))])
-cat("Restricting CMAP query table metadata.cmap.tsv to these columns:\n", wanted, "\n")
+cat("Restricting CMAP query table metadata.cmap.csv to these columns:\n", wanted, "\n")
 stopifnot(wanted %in% colnames(metadata))
 metadata <- metadata[,wanted]
 
-cat("\nWriting metadata.cmap.tsv\n")
-write.table(metadata, 'metadata.cmap.tsv', sep="\t", row.names=F)
+cat("\nWriting metadata.cmap.csv\n")
+write.table(metadata, 'metadata.cmap.csv', sep=",", row.names=F)
 cat("Done!\n")
 quit('no')
