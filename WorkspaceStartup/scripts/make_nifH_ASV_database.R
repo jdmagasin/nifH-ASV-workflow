@@ -9,7 +9,7 @@
 ## and are described in workspaceObjectDescriptions below.
 ##
 ## Usage*:
-##   make_nifH_ASV_database.R  asvAbunds.tsv  asv.fas  asvAnnot.tsv  sampMeta.tsv  cmapData.csv
+##   make_nifH_ASV_database.R  <asvAbunds.tsv>  <asv.fas>  <asvAnnot.tsv>  <sampMeta.tsv>  <cmapData.csv>
 ##
 ## *Intended to be called by the Makefile. Not a tool.
 ##
@@ -147,11 +147,11 @@ cat("Loading annotation...")
 ## Load annotation for ASVs in the abundance table, and split the Genome879
 ## taxa string.
 annotTab <- read_tsv(args["annotTsv"], col_types = cols()) %>%
-    filter(AUID %in% abundTab$AUID) %>%
+  arrange(desc(AUID))  #%>% 
     separate(
-        col = Genome879.tax,
-        sep = ";", paste0("Genome879.", c("k", "p", "c", "o", "f", "g"))
-    )
+      col = Genome879.tax,
+      sep = ";", paste0("Genome879.", c("k", "p", "c", "o", "f", "g"))
+  )
 cat("done.\n")
 
 
@@ -176,8 +176,6 @@ asvSeqs <- tibble(
     sequence = fas[idx.seqs]
 )
 cat("Loaded", nrow(asvSeqs), "ASVs.  ")
-stopifnot(setequal(asvSeqs$AUID, abundTab$AUID))
-cat("ASVs in FASTA and abundance table are 1:1.\n")
 rm(idx.defs, idx.seqs)
 
 
@@ -230,6 +228,50 @@ relabundTab <- abundTab %>% mutate_at(vars(-AUID), ~ . / sum(.))
 ## Verify all columns sum to ~1, and all cols are type double.
 stopifnot(abs((relabundTab %>% select(-AUID) %>% colSums()) - 1) < 1e-9)
 stopifnot(sapply(relabundTab[, -1], class) == "numeric")
+
+
+## ------------------------------------------------------------------------------
+##
+## Filter AUIDs from nifh database objects that did not receive an annotation 
+## during AnnotateAuids
+cat("\nFiltering AUIDs from nifH database objects that did not receive an annotation during AnnotateAuids\n")
+
+## Create a function that filters based on annotation AUIDs
+## Returns a filtered df
+filter_by_annotTab_auid <- function(df) {
+  ## Make a key of the AUIDs from the annotation table to filter input df
+  annotTab_auid_key <- annotTab %>%
+  select(AUID) %>%
+  pull()
+  # filter input df with auid key and rearrange order
+  filt_df <- df %>%
+    filter(AUID %in% annotTab_auid_key)  %>% 
+    arrange(desc(AUID))
+  # Create print statement for number of rows removed
+  rows_removed = nrow(df) - nrow(filt_df)
+  cat("Number of rows removed from:'", deparse(substitute(df)), "':\n", rows_removed,"\n")
+
+  return(filt_df)
+}
+
+# Filter abundance tables
+abundTab <- filter_by_annotTab_auid(abundTab)
+relabundTab <- filter_by_annotTab_auid(relabundTab)
+
+# Filter sequence file
+asvSeqs <- filter_by_annotTab_auid(asvSeqs)
+
+# Verify that all files now have the same number the same AUIDs in the same order after filteration with function
+stopifnot(identical(asvSeqs$AUID, abundTab$AUID) &&
+identical(asvSeqs$AUID, relabundTab$AUID) &&
+identical(asvSeqs$AUID, annotTab$AUID))
+
+# Convert filtered ASV sequences to FASTA format
+# Double check this this is ok to do
+stopifnot(setequal(asvSeqs$AUID, abundTab$AUID))
+cat("ASVs in FASTA and abundance table are 1:1.\n")
+asvSeqs_fasta <- paste0(">", asvSeqs$AUID, "\n", asvSeqs$sequence, collapse = "\n")
+
 
 ## ------------------------------------------------------------------------------
 ##
@@ -291,13 +333,14 @@ cat("The workspace objects can be used with R tidyverse, or without. No R packag
 ## Create the nifH ASV database
 wdir <- "nifH_ASV_database"
 dir.create(wdir)
-x <- file.copy(args["fasta"], file.path(wdir, "asvSeqs.fasta")) # FASTA with original deflines, not asvSeqs
-write_csv(abundTab, file.path(wdir, "abundTab.csv"))
-write_csv(relabundTab, file.path(wdir, "relabundTab.csv"))
-write_csv(annotTab, file.path(wdir, "annotTab.csv"))
-write_csv(metaTab, file.path(wdir, "metaTab.csv"))
-write_csv(cmapTab, file.path(wdir, "cmapTab.csv"))
-writeLines(workspaceObjectDescriptions, file.path(wdir, "manifest.txt"))
+# Filtered versions of each nifH ASV database object
+writeLines(asvSeqs_fasta, file.path(wdir,"filtered_asv_seqs.fasta"))  
+write_csv(abundTab,           file.path(wdir,'abundTab.csv'))
+write_csv(relabundTab,        file.path(wdir,'relabundTab.csv'))
+write_csv(annotTab,           file.path(wdir,'annotTab.csv'))
+write_csv(metaTab,            file.path(wdir,'metaTab.csv'))
+write_csv(cmapTab,            file.path(wdir,'cmapTab.csv'))
+writeLines(workspaceObjectDescriptions, file.path(wdir,'manifest.txt'))
 cat("Wrote files comprising the nifH ASV database.\n")
 
 quit(save = "no")
