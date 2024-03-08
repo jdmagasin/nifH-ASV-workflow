@@ -19,7 +19,7 @@ workspaceObjectDescriptions <- "
      asvSeqs      ASV sequences, 1:1 with abundTab. Each ASV has an ID of the form 'AUID.<number>'.
                   The number only ensures uniqueness.  It does not indicate the ASV's abundance.
      abundTab     ASV abundance counts for all retained samples.  Every count is an integer so the
-                  able will work with the R vegan package.
+                  table can be used with the R vegan package.
      relabundTab  ASV relative abundances for all retained samples.
      annotTab     Annotation for ASVs in abundTab.
      metaTab      Metadata for samples in abundTab.
@@ -29,7 +29,7 @@ workspaceObjectDescriptions <- "
      asvCyanos    Cyanobacteria ASVs based on best hit in Genome879.
      asvNCDs      Non-cyanobacgteria ASVs based on best hit in Genome879.
      GetTaxa()    Find ASVs with a specified taxonomic level (kingdom to genus) based on the ASV's
-                  best hit in Genome879.  Documentation is within the function comments.
+                  best hit in Genome879.
 "
 
 
@@ -50,13 +50,13 @@ if (FALSE) {
     args <- c(
         "../FilterAuids/auid.abundances.filtered.tsv.gz",
         "../FilterAuids/auid.filtered.fasta",
-        "../GatherMetadata/metadata.tsv",
+        "../GatherMetadata/metadata.csv",
         "../AnnotateAuids/auids.annot.tsv",
-        "../CMAP/CMAP_data.csv.gz"
+        "../CMAP/data/CMAP_metadata.csv.gz"
     )
 }
 stopifnot(length(args) == 5)
-names(args) <- c("abundTabTsv", "fasta", "annotTsv", "metaTsv", "envarCsv")
+names(args) <- c("abundTabTsv", "fasta", "annotTsv", "metaCsv", "envarCsv")
 stopifnot(file.exists(args))
 
 cat("Loading libraries...")
@@ -86,7 +86,7 @@ cat("done. ", nrow(abundTab), "ASVs X", ncol(abundTab) - 1, "working samples.\n"
 
 
 cat("Loading sample metadata...")
-metaTab <- as_tibble(read.table(args["metaTsv"], stringsAsFactors = T, header = T, sep = "\t"))
+metaTab <- as_tibble(read.table(args["metaCsv"], stringsAsFactors = T, header = T, sep = ","))
 cat("done. ", nrow(metaTab), "samples X", ncol(metaTab) - 1, "metadata variables.\n")
 ## Drop "_transcriptomic" which GatherAsvs appended to transcriptomic samples.
 x <- sub("_transcriptomic$", "", metaTab$SAMPLEID)
@@ -97,10 +97,12 @@ metaTab$SAMPLEID <- x
 
 
 cat("Loading the CMAP environmental variables...")
-cmapTab <- read_csv(args["envarCsv"], col_types = cols()) # use all cols and avoids msgs
+## Use read.table() because it is ~instantaneous (vs. seconds) and and avoids renaming of each column
+## with ...<colNumber>.
+cmapTab <- as_tibble(read.table(args["envarCsv"], stringsAsFactors = T, header = T, sep=","))
 cat(
     "done. ", nrow(cmapTab), "samples X", ncol(cmapTab) - 1,
-    "CMAP environmental variables.\n"
+    "CMAP environmental variables.\n\n"
 )
 
 
@@ -109,7 +111,7 @@ if (length(x) > 0) {
     cat("Dropping samples that have 0 reads.  ")
     abundTab <- abundTab %>% select(!contains(x))
     cat(length(x), "samples dropped:\n")
-    strwrap(x)
+    cat(strwrap(x),"\n\n")
 }
 
 
@@ -118,7 +120,7 @@ sampIds <- setdiff(colnames(abundTab), "AUID")
 cmapTab <- cmapTab %>% filter(SAMPLEID %in% sampIds)
 missingIdx <- idx <- which(!sampIds %in% cmapTab$SAMPLEID)
 cat(
-    length(idx), "samples in the abundance table have no environmental data",
+    "  ", length(idx), "samples in the abundance table have no environmental data",
     "(sampsWithoutEnvdata.txt)\n"
 )
 writeLines(sampIds[idx], "sampsWithoutEnvdata.txt")
@@ -126,8 +128,8 @@ writeLines(sampIds[idx], "sampsWithoutEnvdata.txt")
 metaTab <- metaTab %>% filter(SAMPLEID %in% sampIds)
 idx <- which(!sampIds %in% metaTab$SAMPLEID)
 cat(
-    length(idx), "samples in the abundance table have no sample metadata",
-    "(sampsWithoutMetadata.txt)\n"
+    "  ", length(idx), "samples in the abundance table have no sample metadata",
+    "(sampsWithoutMetadata.txt)\n\n"
 )
 writeLines(sampIds[idx], "sampsWithoutMetadata.txt")
 missingIdx <- union(idx, missingIdx)
@@ -136,7 +138,7 @@ missingIdx <- union(idx, missingIdx)
 if (!KEEP_SAMPS_MISSING_META_OR_CMAP_DATA && length(missingIdx) > 0) {
     cat(
         "Dropping", length(missingIdx), "samples from the ASV abundance table",
-        "that lack environmental and/or metadata.\n"
+        "that lack environmental and/or metadata.\n\n"
     )
     abundTab <- abundTab %>% select(!contains(sampIds[missingIdx]))
     ## fixme: If going to do this, perhaps should drop these samples from metaTab.
@@ -145,13 +147,13 @@ if (!KEEP_SAMPS_MISSING_META_OR_CMAP_DATA && length(missingIdx) > 0) {
 
 cat("Loading annotation...")
 ## Load annotation for ASVs in the abundance table, and split the Genome879
-## taxa string.
+## taxa string.  Sort by AUID number (consistent with filter_by_annotTab_auid()).
 annotTab <- read_tsv(args["annotTsv"], col_types = cols()) %>%
-  arrange(desc(AUID))  #%>% 
     separate(
       col = Genome879.tax,
       sep = ";", paste0("Genome879.", c("k", "p", "c", "o", "f", "g"))
-  )
+  ) %>%
+  arrange(as.numeric(str_extract(AUID,"\\d+$")))
 cat("done.\n")
 
 
@@ -159,7 +161,7 @@ cat("done.\n")
 ## (which used ShortRead).  Assumes one line for nucleic acids.
 ## Create vector 'auids' which has values that are the AUID sequences and names
 ## that are the AUID identifiers (AUID.<num>).
-cat("Loading ASV sequences...")
+cat("Loading AUID sequences...")
 fas <- readLines(args["fasta"])
 fas <- fas[fas != ""] # Drop empty lines
 ## Checks that lines alternate AUID, then sequence.
@@ -175,7 +177,7 @@ asvSeqs <- tibble(
     AUID = sub("^>(AUID.[^ ]+) .*$", "\\1", fas[idx.defs]),
     sequence = fas[idx.seqs]
 )
-cat("Loaded", nrow(asvSeqs), "ASVs.  ")
+cat("Loaded", nrow(asvSeqs), "AUIDs.\n")
 rm(idx.defs, idx.seqs)
 
 
@@ -234,22 +236,22 @@ stopifnot(sapply(relabundTab[, -1], class) == "numeric")
 ##
 ## Filter AUIDs from nifh database objects that did not receive an annotation 
 ## during AnnotateAuids
-cat("\nFiltering AUIDs from nifH database objects that did not receive an annotation during AnnotateAuids\n")
+cat("\nFiltering out AUIDs that had no annotation from workflow stage AnnotateAuids:\n")
 
 ## Create a function that filters based on annotation AUIDs
 ## Returns a filtered df
 filter_by_annotTab_auid <- function(df) {
   ## Make a key of the AUIDs from the annotation table to filter input df
   annotTab_auid_key <- annotTab %>%
-  select(AUID) %>%
-  pull()
-  # filter input df with auid key and rearrange order
+    select(AUID) %>%
+    pull()
+  # filter input df with auid key and sort by auid number
   filt_df <- df %>%
-    filter(AUID %in% annotTab_auid_key)  %>% 
-    arrange(desc(AUID))
+    filter(AUID %in% annotTab_auid_key)  %>%
+    arrange(as.numeric(str_extract(AUID,"\\d+$")))
   # Create print statement for number of rows removed
   rows_removed = nrow(df) - nrow(filt_df)
-  cat("Number of rows removed from:'", deparse(substitute(df)), "':\n", rows_removed,"\n")
+  cat(paste0("  Number of rows removed from: '", deparse(substitute(df)), "':\t", rows_removed,"\n"))
 
   return(filt_df)
 }
@@ -261,10 +263,10 @@ relabundTab <- filter_by_annotTab_auid(relabundTab)
 # Filter sequence file
 asvSeqs <- filter_by_annotTab_auid(asvSeqs)
 
-# Verify that all files now have the same number the same AUIDs in the same order after filteration with function
+# Verify that all objects and their associated files have the same AUIDs in the same order.
 stopifnot(identical(asvSeqs$AUID, abundTab$AUID) &&
-identical(asvSeqs$AUID, relabundTab$AUID) &&
-identical(asvSeqs$AUID, annotTab$AUID))
+          identical(asvSeqs$AUID, relabundTab$AUID) &&
+          identical(asvSeqs$AUID, annotTab$AUID))
 
 # Convert filtered ASV sequences to FASTA format
 # Double check this this is ok to do
@@ -308,7 +310,7 @@ if (x > 0) {
 ## Make sure tables are coherent: AUIDs and samples work across tables.
 ## Compare to abundTab.
 ##
-cat("Checking consistency of data tables (e.g. same ASVs and samples).\n")
+cat("Checking consistency of data tables (e.g. same AUIDs and samples).\n")
 if (!KEEP_SAMPS_MISSING_META_OR_CMAP_DATA) {
     stopifnot(setdiff(colnames(abundTab), metaTab$SAMPLEID) == "AUID") # Metadata for all samps
     stopifnot(setdiff(colnames(abundTab), cmapTab$SAMPLEID) == "AUID") # CMAP for all samps

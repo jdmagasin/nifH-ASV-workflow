@@ -29,8 +29,8 @@ FILTFASTA    := $(addprefix $(FILTDIR)/,auid.filtered.fasta)
 
 ## From GatherMetadata stage
 METADIR      := $(abspath ../GatherMetadata)
-#CMAPMETA     := $(addprefix $(METADIR)/,metadata.cmap.tsv)
-SAMPMETA     := $(addprefix $(METADIR)/,metadata.tsv)
+#CMAPMETA     := $(addprefix $(METADIR)/,metadata.cmap.csv)
+SAMPMETA     := $(addprefix $(METADIR)/,metadata.csv)
 
 ## From AnnotateAuids stage
 ANNOTDIR     := $(abspath ../AnnotateAuids)
@@ -38,7 +38,8 @@ ANNOTATION   := $(addprefix $(ANNOTDIR)/,auids.annot.tsv)
 
 ## From CMAP stage
 CMAPDIR  := $(abspath ../CMAP)
-CMAPDATA := $(addprefix $(CMAPDIR)/,CMAP_data.csv)
+CMAPDATA := $(addprefix $(CMAPDIR)/,data/CMAP_metadata.csv.gz)
+
 
 ##
 ## The one script for this stage, and its outputs.  The "sampsWithout" files are diagnostic and not
