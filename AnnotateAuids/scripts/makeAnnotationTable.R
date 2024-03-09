@@ -20,11 +20,11 @@ makeAnnotationTable.R  <ARB2017 .tab>  <genome 879 .tab>  <marine diazo .tab>  <
 Input:  Five annotation files listed above. The first three inputs are tabular BLAST results (tab-
         separated columns).  The CART input is a '.map' file but uses commas to separate columns.
 
-Output: auids.annot.tsv   Table with annotation based on BLAST searches of ARB2017, Genome879, and
-                          the marine diazotroph DB, including %id and E-values.  NifH classification
-                          by CART is also included.  NA appears if no annotation was found (at the
-                          cut offs you used). For the ARB2017 and diazotroph DB hits, taxonomy
-                          information is included.
+Output: auids.annot.raw.tsv   Table with annotation based on BLAST searches of ARB2017, Genome879,
+                              and the marine diazotroph DB, including %id and E-values.  NifH
+                              classification by CART is also included.  NA appears if no annotation
+                              was found (at the cut offs you used). For the ARB2017 and diazotroph
+                              DB hits, taxonomy information is included.
 "
 
 ##
@@ -253,6 +253,6 @@ stopifnot(setequal(df$AUID, c(
     annot$CART$AUID
 )))
 
-ofile <- "auids.annot.tsv"
+ofile <- "auids.annot.raw.tsv"
 cat("Writing out the big annotation table", ofile, "\n")
 write.table(df, ofile, quote = F, sep = "\t", row.names = F)
