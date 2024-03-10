@@ -7,38 +7,46 @@
 ##                              879 diazotroph genomes.
 ##  3. NifHClustersFrank2016  - Determine nifH clusters for each ASV using the
 ##                              classification and regression tree (CART) 
-##								approach
-##                              of Frank et al. 2016.
+##                              approach of Frank et al. 2016.
 ##
 ##  4. Marine_NCD_cyano_refsequences
-##                             -  223 nifH sequences from selected
-##                                cyanobacteria and NCDs to provide increased
-##                                resolution.
-##  5. UCYNA_oligoreps         -  Forty-four UNCY-A oligotypes, thirty-eight
-##                                from metagenome assembly, to provide increase ##                                resolution of UCYN-A ASVs.
+##                            - 223 nifH sequences from selected
+##                              cyanobacteria and NCDs to provide increased
+##                              resolution.
+##  5. UCYNA_oligoreps        - Forty-four UCNY-A oligotypes, thirty-eight
+##                              from metagenome assemblies, to provide increased
+##                              resolution of UCYN-A ASVs.
 ##
 ##
 ## This Makefile runs each of the annotation tools, then searches the cyano /
 ## NCD DB, the UCYN-A oligos DB, and then stitches together all the results 
-## into auids.annot.tsv, using scripts/makeAnnotationTable.R. A consensus ID is then assigned based on hierarchical script, make_consensus_taxonomy.py, and output the final annotation table auids.annot.consensus.tsv.
+## into auids.annot.tsv, using scripts/makeAnnotationTable.R. A consensus ID is 
+## assigned for each AUID using information gathered across all the merged 
+## databases using scripts/make_consensus_taxonomy.py and then outputs the 
+## annotation table, auids.annot.consensus.tsv. This table is the final output 
+## of the Makefile.
+##
 ##
 ## Usage:
-##    make                #   Generate all annotation types.  
-##							  Make auids.annot.consensus.tsv
-##    make ARB2017        #   Do just the blastn against ARB 2017
-##    make Genome879      #   Do just the blastx against Genome879
-##    make Clusters       #   Do just the nifH cluster classifications
-##    make NCD_cyano      #   Do just the blastn against 267 NCD and cyano ref nifH
+##    make                # Generate all annotation types.  
+##                          Make auids.annot.consensus.tsv and 
+##                          auids.annot.consensus.tsv
+##    make ARB2017        # Do just the blastn against ARB 2017
+##    make Genome879      # Do just the blastx against Genome879
+##    make Clusters       # Do just the nifH cluster classifications
+##    make NCD_cyano      # Do just the blastn against 267 NCD/cyano ref nifH
+##    make UCYNA_oligos   # Do just the blastn against UCYN-A nifh oligotypes
+
 ##
-##    make clean          # Remove auids.annot.tsv
-##    make superclean     # Remove auids.annot.tsv and all annotation output dirs.
+##    make clean          # Remove auids.annot.tsv and auids.annot.consensus.tsv
+##    make superclean     # Remove auids.annot.tsv, auids.annot.consensus.tsv,
+##                          and all annotation output dirs.
 ##
 
 SHELL=/usr/bin/bash
 
 ## Input: The fasta from FilterAuids
 AUID_FASTA=$(shell realpath ../FilterAuids/auid.filtered.fasta)
-# AUID_FASTA=$(shell realpath ../FilterAuids/auid.filtered.nifHDB.fasta)
 
 ## Output (main):  Table with all annottion
 ANNOT_TAB=auids.annot.tsv
@@ -85,15 +93,15 @@ NCDCYANO_OUTS=$(NCDCYANO_TAB) $(NCDCYANO_ALN)
 
 
 ## UCYN-A nifH reference sequences (~267 total)
-OLIGOS_DIR=UCYNA_oligoreps
-OLIGOS_LOG=log.marine_NCD_cyano.txt
-OLIGOS_FASTA=$(shell realpath data/UCYNA_oligoreps/UCYNA_oligoreps.fasta.gz)
-OLIGOS_PCTID=97
-OLIGOS_QRYCVG=70
-OLIGOS_DESC=$(OLIGOS_PCTID)pid.$(OLIGOS_QRYCVG)cvg
-OLIGOS_TAB=$(addprefix $(OLIGOS_DIR)/, blastn_NCD_cyano.$(OLIGOS_DESC).tab)
-OLIGOS_ALN=$(addprefix $(OLIGOS_DIR)/, blastn_NCD_cyano.$(OLIGOS_DESC).aln.gz)
-OLIGOS_OUTS=$(OLIGOS_TAB) $(OLIGOS_ALN)
+UCYNA_OLIGOS_DIR=UCYNA_oligoreps
+UCYNA_OLIGOS_LOG=log.OLIGOS.txt
+UCYNA_OLIGOS_FASTA=$(shell realpath data/UCYNA_oligoreps/UCYNA_oligoreps.fasta.gz)
+UCYNA_OLIGOS_PCTID=97
+UCYNA_OLIGOS_QRYCVG=70
+UCYNA_OLIGOS_DESC=$(UCYNA_OLIGOS_PCTID)pid.$(UCYNA_OLIGOS_QRYCVG)cvg
+UCYNA_OLIGOS_TAB=$(addprefix $(UCYNA_OLIGOS_DIR)/, blastn_OLIGOS.$(UCYNA_OLIGOS_DESC).tab)
+UCYNA_OLIGOS_ALN=$(addprefix $(UCYNA_OLIGOS_DIR)/, blastn_OLIGOS.$(UCYNA_OLIGOS_DESC).aln.gz)
+UCYNA_OLIGOS_OUTS=$(UCYNA_OLIGOS_TAB) $(UCYNA_OLIGOS_ALN)
 
 
 ## NifH clusters
@@ -104,7 +112,7 @@ NIFHCLUST_MAP=$(word 1, $(NIFHCLUST_OUTS))
 
 
 ## Marine NCD and cyanobacteria nifH reference sequences (~267 total)
-all: $(ANNOT_TAB) $(CONS_TAXONOMY_TAB)
+all: $(CONS_TAXONOMY_TAB)
 
 clean:
 	@echo "Removing $(ANNOT_TAB) $(CONS_TAXONOMY_TAB)"
@@ -115,7 +123,7 @@ superclean:
 	@echo "Removing $(ANNOT_TAB), $(CONS_TAXONOMY_TAB), and all annotation working directories."
 	@if [ -f "$(ANNOT_TAB)" ] ; then rm "$(ANNOT_TAB)" ; fi
 	@if [ -f "$(CONS_TAXONOMY_TAB)" ] ; then rm "$(CONS_TAXONOMY_TAB)" ; fi
-	@for x in $(ARB2017_DIR) $(GENOME879_DIR) $(NIFHCLUST_DIR) $(NCDCYANO_DIR) $(OLIGOS_DIR); do \
+	@for x in $(ARB2017_DIR) $(GENOME879_DIR) $(NIFHCLUST_DIR) $(NCDCYANO_DIR) $(UCYNA_OLIGOS_DIR); do \
 	    if [ -d "$$x" ] ; then rm -r "$$x"; fi \
 	done
 
@@ -127,13 +135,13 @@ Clusters : $(NIFHCLUST_OUTS)
 
 NCD_cyano: $(NCDCYANO_OUTS)
 
-UCYNA_oligos: $(OLIGOS_OUTS)
+UCYNA_oligos: $(UCYNA_OLIGOS_OUTS)
 
 
 ## Note the use of the cluster .map file.
-$(ANNOT_TAB): $(ARB2017_OUTS) $(GENOME879_OUTS) $(NCDCYANO_OUTS) $(OLIGOS_OUTS) $(NIFHCLUST_OUTS)
+$(ANNOT_TAB): $(ARB2017_OUTS) $(GENOME879_OUTS) $(NCDCYANO_OUTS) $(UCYNA_OLIGOS_OUTS) $(NIFHCLUST_OUTS)
 	@echo ">>>>> Combining all annotation into one table $(ANNOT_TAB) <<<<<"
-	@scripts/makeAnnotationTable.R $(ARB2017_TAB) $(GENOME879_TAB) $(NCDCYANO_TAB) $(OLIGOS_TAB) $(NIFHCLUST_MAP)
+	@scripts/makeAnnotationTable.R $(ARB2017_TAB) $(GENOME879_TAB) $(NCDCYANO_TAB) $(UCYNA_OLIGOS_TAB) $(NIFHCLUST_MAP)
 	@echo ">>>>> Finished combining annotation <<<<<"
 	@echo
 
@@ -193,20 +201,20 @@ $(NCDCYANO_OUTS) &: $(AUID_FASTA) $(NCDCYANO_FASTA)
 
 
 # Make the DB, then search and save as ASN.1. Then create tabular and alignment outputs.
-$(OLIGOS_OUTS) &: $(AUID_FASTA) $(OLIGOS_FASTA)
+$(UCYNA_OLIGOS_OUTS) &: $(AUID_FASTA) $(UCYNA_OLIGOS_FASTA)
 	@echo ">>>>> Searching AUIDs against additional reference nifH from UCYN-A oligos <<<<<"
-	@mkdir -p $(OLIGOS_DIR) ; \
-	cd $(OLIGOS_DIR) ; \
+	@mkdir -p $(UCYNA_OLIGOS_DIR) ; \
+	cd $(UCYNA_OLIGOS_DIR) ; \
 	echo "Making database" ; \
-	cat $(OLIGOS_FASTA) | gunzip \
+	cat $(UCYNA_OLIGOS_FASTA) | gunzip \
 	  | makeblastdb -dbtype nucl -title UCYNA_oligos_nifH -out UCYNA_oligos_nifH ; \
 	echo "Searching database" ; \
 	blastn -db UCYNA_oligos_nifH -query $(AUID_FASTA) \
-	    -perc_identity $(OLIGOS_PCTID) -qcov_hsp_perc $(OLIGOS_QRYCVG) -outfmt 11 > asn.tmp ; \
+	    -perc_identity $(UCYNA_OLIGOS_PCTID) -qcov_hsp_perc $(UCYNA_OLIGOS_QRYCVG) -outfmt 11 > asn.tmp ; \
 	echo "Reformatting output" ; \
 	blast_formatter -archive asn.tmp -outfmt 0 -num_alignments 10 -num_descriptions 100 \
-	  | gzip > `basename $(OLIGOS_ALN)` ; \
-	blast_formatter -archive asn.tmp -outfmt 6 > `basename $(OLIGOS_TAB)` ; \
+	  | gzip > `basename $(UCYNA_OLIGOS_ALN)` ; \
+	blast_formatter -archive asn.tmp -outfmt 6 > `basename $(UCYNA_OLIGOS_TAB)` ; \
 	echo "Cleaning up" ; \
 	rm asn.tmp UCYNA_oligos_nifH.n??
 	@echo ">>>>> Finished searching additional reference nifH <<<<<"
