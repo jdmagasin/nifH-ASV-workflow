@@ -336,7 +336,7 @@ cat("The workspace objects can be used with R tidyverse, or without. No R packag
 wdir <- "nifH_ASV_database"
 dir.create(wdir)
 # Filtered versions of each nifH ASV database object
-writeLines(asvSeqs_fasta, file.path(wdir,"filtered_asv_seqs.fasta"))  
+writeLines(asvSeqs_fasta,     file.path(wdir,"asvSeqs.fasta"))  
 write_csv(abundTab,           file.path(wdir,'abundTab.csv'))
 write_csv(relabundTab,        file.path(wdir,'relabundTab.csv'))
 write_csv(annotTab,           file.path(wdir,'annotTab.csv'))
