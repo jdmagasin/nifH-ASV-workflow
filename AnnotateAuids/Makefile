@@ -6,7 +6,7 @@
 ##  2. BlastxGenome879        - Blastx ASVs against the Zehr Lab's database with
 ##                              879 diazotroph genomes.
 ##  3. NifHClustersFrank2016  - Determine nifH clusters for each ASV using the
-##                              classification and regression tree (CART) 
+##                              classification and regression tree (CART)
 ##                              approach of Frank et al. 2016.
 ##  4. Marine_NCD_cyano_refsequences
 ##                            - 223 nifH sequences from selected cyanobacteria
@@ -114,12 +114,12 @@ all: $(ANNOT_TAB)
 
 clean:
 	@echo "Removing $(ANNOT_TAB_RAW) and $(ANNOT_TAB)"
-@if [ -f "$(ANNOT_TAB_RAW)" ] ; then rm "$(ANNOT_TAB_RAW)" ; fi
+	@if [ -f "$(ANNOT_TAB_RAW)" ] ; then rm "$(ANNOT_TAB_RAW)" ; fi
 	@if [ -f "$(ANNOT_TAB)" ] ; then rm "$(ANNOT_TAB)" ; fi
-	
+
 superclean:
 	@echo "Removing $(ANNOT_TAB_RAW), $(ANNOT_TAB), and work directories."
-@if [ -f "$(ANNOT_TAB_RAW)" ] ; then rm "$(ANNOT_TAB_RAW)" ; fi
+	@if [ -f "$(ANNOT_TAB_RAW)" ] ; then rm "$(ANNOT_TAB_RAW)" ; fi
 	@if [ -f "$(ANNOT_TAB)" ] ; then rm "$(ANNOT_TAB)" ; fi
 	@for x in $(ARB2017_DIR) $(GENOME879_DIR) $(NIFHCLUST_DIR) \
 	          $(NCDCYANO_DIR) $(UCYNA_OLIGOS_DIR); do \
@@ -139,10 +139,10 @@ UCYNA_oligos: $(UCYNA_OLIGOS_OUTS)
 
 ## Note the use of the cluster .map file.
 $(ANNOT_TAB_RAW): $(ARB2017_OUTS) $(GENOME879_OUTS) $(NCDCYANO_OUTS) \
-		  $(OLIGOS_OUTS) $(NIFHCLUST_OUTS)
+		  $(UCYNA_OLIGOS_OUTS) $(NIFHCLUST_OUTS)
 	@echo ">>>>> Collecting annotation into one table $(ANNOT_TAB_RAW) <<<<<"
 	@scripts/makeAnnotationTable.R $(ARB2017_TAB) $(GENOME879_TAB) \
-	    $(NCDCYANO_TAB) $(OLIGOS_TAB) $(NIFHCLUST_MAP)
+	    $(NCDCYANO_TAB) $(UCYNA_OLIGOS_TAB) $(NIFHCLUST_MAP)
 	@echo ">>>>> Finished collecting annotation <<<<<"
 	@echo
 
@@ -224,7 +224,7 @@ $(UCYNA_OLIGOS_OUTS) &: $(AUID_FASTA) $(UCYNA_OLIGOS_FASTA)
 	blast_formatter -archive asn.tmp -outfmt 6 > `basename $(UCYNA_OLIGOS_TAB)` ; \
 	echo "Cleaning up" ; \
 	rm asn.tmp UCYNA_oligos_nifH.n??
-	@echo ">>>>> Finished searching additional reference nifH <<<<<"
+	@echo ">>>>> Finished searching UCYN-A nifH oligos <<<<<"
 	@echo
 
 
