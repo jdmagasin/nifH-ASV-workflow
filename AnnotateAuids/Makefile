@@ -29,7 +29,9 @@
 ##    make ARB2017        # Do just the blastn against ARB 2017
 ##    make Genome879      # Do just the blastx against Genome879
 ##    make Clusters       # Do just the nifH cluster classifications
-##    make NCD_cyano      # Do just the blastn against cyano / NCD nifH.
+##    make NCD_cyano      # Do just the blastn against 267 NCD/cyano ref nifH
+##    make UCYNA_oligos   # Do just the blastn against UCYN-A nifh oligotypes
+
 ##
 ##    make clean          # Remove auids.annot.tsv
 ##    make superclean     # Remove auids.annot.tsv and all annotation output dirs.
@@ -85,16 +87,16 @@ NCDCYANO_ALN=$(addprefix $(NCDCYANO_DIR)/, blastn_NCD_cyano.$(NCDCYANO_DESC).aln
 NCDCYANO_OUTS=$(NCDCYANO_TAB) $(NCDCYANO_ALN)
 
 
-## UCYN-A nifH reference sequences
-OLIGOS_DIR=UCYNA_oligoreps
-OLIGOS_LOG=log.marine_NCD_cyano.txt
-OLIGOS_FASTA=$(shell realpath data/UCYNA_oligoreps/UCYNA_oligoreps.fasta.gz)
-OLIGOS_PCTID=97
-OLIGOS_QRYCVG=70
-OLIGOS_DESC=$(OLIGOS_PCTID)pid.$(OLIGOS_QRYCVG)cvg
-OLIGOS_TAB=$(addprefix $(OLIGOS_DIR)/, blastn_NCD_cyano.$(OLIGOS_DESC).tab)
-OLIGOS_ALN=$(addprefix $(OLIGOS_DIR)/, blastn_NCD_cyano.$(OLIGOS_DESC).aln.gz)
-OLIGOS_OUTS=$(OLIGOS_TAB) $(OLIGOS_ALN)
+## UCYN-A nifH reference sequences (~267 total)
+UCYNA_OLIGOS_DIR=UCYNA_oligoreps
+UCYNA_OLIGOS_LOG=log.OLIGOS.txt
+UCYNA_OLIGOS_FASTA=$(shell realpath data/UCYNA_oligoreps/UCYNA_oligoreps.fasta.gz)
+UCYNA_OLIGOS_PCTID=97
+UCYNA_OLIGOS_QRYCVG=70
+UCYNA_OLIGOS_DESC=$(UCYNA_OLIGOS_PCTID)pid.$(UCYNA_OLIGOS_QRYCVG)cvg
+UCYNA_OLIGOS_TAB=$(addprefix $(UCYNA_OLIGOS_DIR)/, blastn_OLIGOS.$(UCYNA_OLIGOS_DESC).tab)
+UCYNA_OLIGOS_ALN=$(addprefix $(UCYNA_OLIGOS_DIR)/, blastn_OLIGOS.$(UCYNA_OLIGOS_DESC).aln.gz)
+UCYNA_OLIGOS_OUTS=$(UCYNA_OLIGOS_TAB) $(UCYNA_OLIGOS_ALN)
 
 
 ## NifH clusters
@@ -120,7 +122,7 @@ superclean:
 	@if [ -f "$(ANNOT_TAB_RAW)" ] ; then rm "$(ANNOT_TAB_RAW)" ; fi
 	@if [ -f "$(ANNOT_TAB)" ] ; then rm "$(ANNOT_TAB)" ; fi
 	@for x in $(ARB2017_DIR) $(GENOME879_DIR) $(NIFHCLUST_DIR) \
-	          $(NCDCYANO_DIR) $(OLIGOS_DIR); do \
+	          $(NCDCYANO_DIR) $(UCYNA_OLIGOS_DIR); do \
 	    if [ -d "$$x" ] ; then rm -r "$$x"; fi \
 	done
 
@@ -132,15 +134,15 @@ Clusters : $(NIFHCLUST_OUTS)
 
 NCD_cyano: $(NCDCYANO_OUTS)
 
-UCYNA_oligos: $(OLIGOS_OUTS)
+UCYNA_oligos: $(UCYNA_OLIGOS_OUTS)
 
 
 ## Note the use of the cluster .map file.
 $(ANNOT_TAB_RAW): $(ARB2017_OUTS) $(GENOME879_OUTS) $(NCDCYANO_OUTS) \
-		  $(OLIGOS_OUTS) $(NIFHCLUST_OUTS)
+		  $(UCYNA_OLIGOS_OUTS) $(NIFHCLUST_OUTS)
 	@echo ">>>>> Collecting annotation into one table $(ANNOT_TAB_RAW) <<<<<"
 	@scripts/makeAnnotationTable.R $(ARB2017_TAB) $(GENOME879_TAB) \
-	    $(NCDCYANO_TAB) $(OLIGOS_TAB) $(NIFHCLUST_MAP)
+	    $(NCDCYANO_TAB) $(UCYNA_OLIGOS_TAB) $(NIFHCLUST_MAP)
 	@echo ">>>>> Finished collecting annotation <<<<<"
 	@echo
 
@@ -205,22 +207,21 @@ $(NCDCYANO_OUTS) &: $(AUID_FASTA) $(NCDCYANO_FASTA)
 	@echo
 
 
-# Make the DB, then search and save as ASN.1. Then create tabular and alignment
-# outputs.
-$(OLIGOS_OUTS) &: $(AUID_FASTA) $(OLIGOS_FASTA)
-	@echo ">>>>> Searching AUIDs against reference nifH from UCYN-A oligos <<<<<"
-	@mkdir -p $(OLIGOS_DIR) ; \
-	cd $(OLIGOS_DIR) ; \
+# Make the DB, then search and save as ASN.1. Then create tabular and alignment outputs.
+$(UCYNA_OLIGOS_OUTS) &: $(AUID_FASTA) $(UCYNA_OLIGOS_FASTA)
+	@echo ">>>>> Searching AUIDs against additional reference nifH from UCYN-A oligos <<<<<"
+	@mkdir -p $(UCYNA_OLIGOS_DIR) ; \
+	cd $(UCYNA_OLIGOS_DIR) ; \
 	echo "Making database" ; \
-	cat $(OLIGOS_FASTA) | gunzip \
+	cat $(UCYNA_OLIGOS_FASTA) | gunzip \
 	  | makeblastdb -dbtype nucl -title UCYNA_oligos_nifH -out UCYNA_oligos_nifH ; \
 	echo "Searching database" ; \
 	blastn -db UCYNA_oligos_nifH -query $(AUID_FASTA) \
-	    -perc_identity $(OLIGOS_PCTID) -qcov_hsp_perc $(OLIGOS_QRYCVG) -outfmt 11 > asn.tmp ; \
+	    -perc_identity $(UCYNA_OLIGOS_PCTID) -qcov_hsp_perc $(UCYNA_OLIGOS_QRYCVG) -outfmt 11 > asn.tmp ; \
 	echo "Reformatting output" ; \
 	blast_formatter -archive asn.tmp -outfmt 0 -num_alignments 10 -num_descriptions 100 \
-	  | gzip > `basename $(OLIGOS_ALN)` ; \
-	blast_formatter -archive asn.tmp -outfmt 6 > `basename $(OLIGOS_TAB)` ; \
+	  | gzip > `basename $(UCYNA_OLIGOS_ALN)` ; \
+	blast_formatter -archive asn.tmp -outfmt 6 > `basename $(UCYNA_OLIGOS_TAB)` ; \
 	echo "Cleaning up" ; \
 	rm asn.tmp UCYNA_oligos_nifH.n??
 	@echo ">>>>> Finished searching UCYN-A nifH oligos <<<<<"

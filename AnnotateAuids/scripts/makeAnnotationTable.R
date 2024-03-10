@@ -130,7 +130,7 @@ alts <- sapply(
         if (length(altsIdx) > 0) {
             i <- altsIdx[1]
         } # Found a replacement(s)
-        i
+                i
     }
 )
 
@@ -253,6 +253,6 @@ stopifnot(setequal(df$AUID, c(
     annot$CART$AUID
 )))
 
-ofile <- "auids.annot.raw.tsv"
+ofile <- "auids.annot.raw.raw.tsv"
 cat("Writing out the big annotation table", ofile, "\n")
 write.table(df, ofile, quote = F, sep = "\t", row.names = F)
