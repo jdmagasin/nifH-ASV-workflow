@@ -1,9 +1,9 @@
 {
-    "input_path": "../GatherMetadata/test_sample_collection_data.csv",
+    "input_path": "../GatherMetadata/metadata.cmap.csv",
     "output_path": "data/CMAP_metadata.csv.gz",
     ## MODIFY THIS TO BE YOUR API KEY 
-    "api_key": "*******YOU_API_KEY_HERE*******"
+    ## "api_key": "*******YOU_API_KEY_HERE*******"
     ## Your API key can be obtained here:
-    ## https: //simonscmap.com/apikeymanagement
-    ## snakefile  will not work without a valid API key
+    ## https://simonscmap.com/apikeymanagement
+    ## Snakefile  will not work without a valid API key
 }
