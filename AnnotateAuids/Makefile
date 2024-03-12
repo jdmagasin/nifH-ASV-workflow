@@ -1,7 +1,8 @@
 ## Copyright (C) 2023 Jonathan D. Magasin
 ##
 ## Annotate ASVs from stage FilterAuids using three tools that are included in
-## the DADA2 nifH pipeline's "scripts.ancillary/Annotation" directory:
+## the DADA2 nifH pipeline's "scripts.ancillary/Annotation" directory (1-3) and
+## by performing two additional DB searches (4,5):
 ##  1. BlastnARB2017          - Blastn ASVs against the 2017 ARB nifH database 
 ##  2. BlastxGenome879        - Blastx ASVs against the Zehr Lab's database with
 ##                              879 diazotroph genomes.
@@ -14,7 +15,6 @@
 ##  5. UCYNA_oligoreps        - Forty-four UNCY-A oligotypes, thirty-eight from
 ##                              metagenome assemblies, to provide increased
 ##                              resolution of UCYN-A ASVs.
-##
 ##
 ## This Makefile runs each of the DADA2 nifH pipeline annotation tools and then
 ## performs additional searches for the ASVs within the cyano / NCD DB and the
@@ -31,7 +31,8 @@
 ##    make Clusters       # Do just the nifH cluster classifications
 ##    make NCD_cyano      # Do just the blastn against 267 NCD/cyano ref nifH
 ##    make UCYNA_oligos   # Do just the blastn against UCYN-A nifh oligotypes
-
+##    make CCAMP_check    # Check for paired cysteines that might coordinate the
+##                          4Fe-4S cluster followed by AMP.
 ##
 ##    make clean          # Remove auids.annot.tsv
 ##    make superclean     # Remove auids.annot.tsv and all annotation output dirs.
@@ -99,12 +100,20 @@ UCYNA_OLIGOS_ALN=$(addprefix $(UCYNA_OLIGOS_DIR)/, blastn_OLIGOS.$(UCYNA_OLIGOS_
 UCYNA_OLIGOS_OUTS=$(UCYNA_OLIGOS_TAB) $(UCYNA_OLIGOS_ALN)
 
 
-## NifH clusters
+## NifH clusters. ORFs also used by CCAMP_check.
 NIFHCLUST_DIR=Classify_NifH_Clusters
 NIFHCLUST_LOG=log.nifH_clusters.txt
-NIFHCLUST_OUTS=$(addprefix $(NIFHCLUST_DIR)/, auid.filtered.clusters.map auid.filtered.withNifH_Clusters.fasta)
-NIFHCLUST_MAP=$(word 1, $(NIFHCLUST_OUTS))
+NIFHCLUST_OUTS=$(addprefix $(NIFHCLUST_DIR)/, auid.filtered.orfs.faa auid.filtered.clusters.map auid.filtered.withNifH_Clusters.fasta)
+NIFHCLUST_ORFS=$(word 1, $(NIFHCLUST_OUTS))
+NIFHCLUST_MAP=$(word 2, $(NIFHCLUST_OUTS))
 
+
+## Check for paired cysteines that might ligate 4Fe-4S. The C's are in the
+## Switch I and II conserved regions. Also check for AMP often in Switch II.
+## See Figure 1 in Schlessman et al. 1998.
+CCAMP_DIR=Check_Paired_Cysteines
+CCAMP_OUTS=$(addprefix $(CCAMP_DIR)/, ccamp.csv)
+CCAMP_TAB=$(word 1, $(CCAMP_OUTS))
 
 ##
 ## Here come the rules!
@@ -122,7 +131,7 @@ superclean:
 	@if [ -f "$(ANNOT_TAB_RAW)" ] ; then rm "$(ANNOT_TAB_RAW)" ; fi
 	@if [ -f "$(ANNOT_TAB)" ] ; then rm "$(ANNOT_TAB)" ; fi
 	@for x in $(ARB2017_DIR) $(GENOME879_DIR) $(NIFHCLUST_DIR) \
-	          $(NCDCYANO_DIR) $(UCYNA_OLIGOS_DIR); do \
+	          $(NCDCYANO_DIR) $(UCYNA_OLIGOS_DIR) $(CCAMP_DIR); do \
 	    if [ -d "$$x" ] ; then rm -r "$$x"; fi \
 	done
 
@@ -136,13 +145,15 @@ NCD_cyano: $(NCDCYANO_OUTS)
 
 UCYNA_oligos: $(UCYNA_OLIGOS_OUTS)
 
+CCAMP_check: $(CCAMP_OUTS)
+
 
 ## Note the use of the cluster .map file.
 $(ANNOT_TAB_RAW): $(ARB2017_OUTS) $(GENOME879_OUTS) $(NCDCYANO_OUTS) \
-		  $(UCYNA_OLIGOS_OUTS) $(NIFHCLUST_OUTS)
+		  $(UCYNA_OLIGOS_OUTS) $(NIFHCLUST_OUTS) $(CCAMP_OUTS)
 	@echo ">>>>> Collecting annotation into one table $(ANNOT_TAB_RAW) <<<<<"
 	@scripts/makeAnnotationTable.R $(ARB2017_TAB) $(GENOME879_TAB) \
-	    $(NCDCYANO_TAB) $(UCYNA_OLIGOS_TAB) $(NIFHCLUST_MAP)
+	    $(NCDCYANO_TAB) $(UCYNA_OLIGOS_TAB) $(NIFHCLUST_MAP) $(CCAMP_TAB)
 	@echo ">>>>> Finished collecting annotation <<<<<"
 	@echo
 
@@ -225,6 +236,16 @@ $(UCYNA_OLIGOS_OUTS) &: $(AUID_FASTA) $(UCYNA_OLIGOS_FASTA)
 	echo "Cleaning up" ; \
 	rm asn.tmp UCYNA_oligos_nifH.n??
 	@echo ">>>>> Finished searching UCYN-A nifH oligos <<<<<"
+	@echo
+
+
+## Search the ORFs created for NIFHCLUST_OUTS for expected cysteines that coordinate 4Fe-4S.
+$(CCAMP_OUTS) &: $(AUID_FASTA) $(NIFHCLUST_ORFS)
+	@echo ">>>>> Searching AUID ORFs for highly conserved cysteine pattern <<<<<"
+	@mkdir -p $(CCAMP_DIR) ; \
+	cd $(CCAMP_DIR) ; \
+	../scripts/check_CCAMP.R ../$(NIFHCLUST_ORFS)
+	@echo ">>>>> Finished searching ORFs for cysteine pattern <<<<<"
 	@echo
 
 

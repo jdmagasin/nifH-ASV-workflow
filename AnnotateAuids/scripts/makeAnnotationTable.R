@@ -3,41 +3,48 @@
 ## Copyright (C) 2023 Jonathan D. Magasin
 ##
 ## Make a big table of ASV annotation with respect to several references:
-##  - ARB 2017:  Zehr Lab nifH ARB database as of 2017.
-##  - Genome879: Genomes from 879 diazotrophs
-##  - Marine diazotrophs nifH DB: Small DB with cyano and noncyano diazotrophs, some assembled from
-##    metagenomic data.
-##  - CART:  NifH cluster classifier by Frank et 2016
+##  1- ARB 2017:  Zehr Lab nifH ARB database as of 2017.
+##  2- Genome879: Genomes from 879 diazotrophs
+##  3- Marine diazotrophs nifH DB: Small DB with cyano and noncyano diazotrophs, some assembled from
+##     metagenomic data.
+##  4- UCYN-A oligos: A small DB of UCYN-A oligotypes
+##  5- CART:  NifH cluster classifier by Frank et 2016
+##  6- Conserved cysteines check:  Results from a check for C's usually found in the highly conserved
+##     Switch I and II regions of NifH.  AMP just after the Switch II C is also part of the checked
+##     pattern.
 ##
-## The first 3 tables are from BLAST searches; take the best hit (by E-value). For ARB2017 hits that
+## The first 4 tables are from BLAST searches; take the best hit (by E-value). For ARB2017 hits that
 ## lack useful annotation, try to find an equally good and informative hit.
 ##  -- Unfortunately this didn't help.  Rather than 'equally good' perhaps try hits with slightly
 ##     worse E-values...
 ##
 usageStr <- "
-makeAnnotationTable.R  <ARB2017 .tab>  <genome 879 .tab>  <marine diazo .tab>  <ucyna_oligos .tab> <CART clusters .map>
+makeAnnotationTable.R  <ARB2017 .tab>  <genome 879 .tab>  <marine diazo .tab>  <ucyna_oligos .tab>
+                       <CART clusters .map>  <CCAMP check .csv>
 
-Input:  Five annotation files listed above. The first three inputs are tabular BLAST results (tab-
+Input:  Six annotation files listed above. The first four inputs are tabular BLAST results (tab-
         separated columns).  The CART input is a '.map' file but uses commas to separate columns.
+        The CCAMP input is a table from check_CCAMP.R.
 
 Output: auids.annot.raw.tsv   Table with annotation based on BLAST searches of ARB2017, Genome879,
                               and the marine diazotroph DB, including %id and E-values.  NifH
-                              classification by CART is also included.  NA appears if no annotation
-                              was found (at the cut offs you used). For the ARB2017 and diazotroph
-                              DB hits, taxonomy information is included.
+                              classification by CART is also included, as well as results from the
+                              conserved cysteines check.  NA appears if no annotation was found (at
+                              the cut offs you used). For the ARB2017 and diazotroph DB hits,
+                              taxonomy information is included.
 "
 
 ##
 ## Get annotation file names
 ##
-annotFiles <- commandArgs(T)[c(1:5)]
+annotFiles <- commandArgs(T)[c(1:6)]
 idx <- which(sapply(annotFiles, file.exists))
-if (length(idx) != 5) {
+if (length(idx) != 6) {
     cat("\nError: Missing input file(s)", annotFiles[-idx], "\n")
     cat(usageStr)
     stop("Aborting.")
 }
-names(annotFiles) <- c("ARB2017", "Genome879", "MarineDiazo", "UCYNAoligos", "CART")
+names(annotFiles) <- c("ARB2017", "Genome879", "MarineDiazo", "UCYNAoligos", "CART", "CCAMP")
 
 ##
 ## Load results from annotation tools
@@ -46,7 +53,7 @@ cat("Loading annotation tables\n")
 annot <- lapply(names(annotFiles), function(x) {
     fn <- annotFiles[x]
     cat("Loading", fn, "...")
-    if (grepl("\\.map$", fn)) {
+    if (grepl("\\.(map|csv)$", fn)) {
         x <- read.csv(fn)
     } else {
         x <- read.table(fn)
@@ -65,6 +72,7 @@ colnames(annot$Genome879) <- blastHeader
 colnames(annot$MarineDiazo) <- blastHeader
 colnames(annot$UCYNAoligos) <- blastHeader
 colnames(annot$CART) <- c("AUID", "cluster", "subcluster")
+colnames(annot$CCAMP) <- c("AUID", "CCAMP.orfLen", "CCAMP.patLen")
 
 cat("Loading Genome879 taxomomy map...")
 g879taxPath <- file.path("./data", "genome879_acc_taxstring.txt")
@@ -214,10 +222,6 @@ stopifnot(setequal(df$AUID, c(
 )))
 
 
-
-# _##################
-
-
 # _#FIXME:#############
 ##
 ## UCYN-A oligos
@@ -241,7 +245,6 @@ stopifnot(setequal(df$AUID, c(
 )))
 
 
-
 # _#FIXME:#################
 ##
 ## And now add CART annotation.
@@ -253,6 +256,15 @@ stopifnot(setequal(df$AUID, c(
     annot$CART$AUID
 )))
 
-ofile <- "auids.annot.raw.raw.tsv"
+
+#############
+##
+## Conserved cysteine pattern check
+## Only include CCAMP results for AUIDs that have other annotation.
+##
+df <- merge(x = df, y = annot$CCAMP, all.x = T)
+
+
+ofile <- "auids.annot.raw.tsv"
 cat("Writing out the big annotation table", ofile, "\n")
 write.table(df, ofile, quote = F, sep = "\t", row.names = F)
