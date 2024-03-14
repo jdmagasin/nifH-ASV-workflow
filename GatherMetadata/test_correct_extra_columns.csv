@@ -1,0 +1,4 @@
+lat,lon,time,depth,station,ID,sample_ID
+0.0,100.0,T1200,5.01,001,01A1,AUID.1
+0.0,100.0,T1200,5.0,002,02A3,AUID.2
+0.0,100.0,T1200,5.0,003,03A3,AUID.3

@@ -4,33 +4,47 @@
 #_#  Snakefile file to mange the CMAP stage of the nifH ASV workflow ##
 #_#  Configfile is used to supply parameters to Snakefile ##
 
-##  Description:
 ##  CMAP Data Colocalization ##
+##  Description:
 ##      Colocalizes input data with CMAP (Simons Collaboration on Ocean 
-##      Processes and Ecology) data repositry and saves the colocalized dataset.
-##      Calls script: query_CMAP.py
-##          Takes CSV as input and colocalizes with specified targets in the 
-##          CMAP database, and saves the colocalized dataset as a compressed 
-##          CSV file.
+##      Processes and Ecology) data repository to retrieve environmental data 
+##      of interest to be used in analysis. The output is a compress csv file 
+##      of the colocalized dataset.
+##
+##  Calls script: query_cmap.py
+##      Takes CSV of the nifH amplicon sample collection data (lat, lon, 
+##      time, and depth) as input, colocalizes this with specified targets in 
+##      the CMAP catalog, producing a compressed CSV file with environment data 
+##      of interest.
 ## 
-##  Parameters are passed via a config file. ##
-#!############ MODIFICATION OF THIS FILE (config.json) IS REQUIRE #############
-##  Configfile: config.json
-#!#     MODIFY "api_key": "" TO BE YOUR API KEY as described at 
-#!#      Your API key can be obtained here:
-#!#      https: //simonscmap.com/apikeymanagement
+##  Parameters are passed via a config file
+##!  ############ MODIFICATION OF THIS FILE (config.json) #############
+##!  ########################## IS REQUIRE ###########################
+##!  Configfile: config.json
+##!     MODIFY "api_key": "*******YOU_API_KEY_HERE*******" TO BE YOUR API KEY 
+##!     as described at: https://simonscmap.com/apikeymanagement
 ##      
-##  After the addition of your API key to the config file, workflow can be run 
-##  as show below.
+##  After the addition of your API key to the config file, the workflow can be 
+##  run as shown below in Usage.
+##
+##  Conda environment:
+##      A conda environment is created that encasulates all the necessary 
+##      libraries/packages and tools required to run the query_cmap.py script. 
+##      Running the snakefile will make this conda environment using file: 
+##      CMAP/environments/CMAP_enviroments.yaml
+##
+##  A more detailed explaination of the script 'query_cmap.py' and all that it ##  does can be found in the documentation within the script itself. Most of 
+##  these detials can also be accessed by running the script with itself with ##  the help argument:
+##  query_cmap.py --help
 ##
 ##
 ##  Usage:
 ##    snakemake -c1 --use-conda         # Default. Retrieve CMAP data if 
 ##                                        metadata.cmap.tsv changed.
 ##    snakemake -c1 clean               # Remove CMAP_metadata.csv.gz
-##    snakemake -c1 superclean          # Remove CMAP_metadata.csv.gz and log 
-##                                        directory.
-
+##    snakemake -c1 superclean          # Remove CMAP_metadata.csv.gz, log 
+##                                        directory, and CMAP conda environment
+##
 ##
 
 
@@ -46,8 +60,8 @@ import datetime
 def get_timestamp():
     return datetime.datetime.now().strftime("%Y%m%d")
 
-
-rule CMAP_query:
+# Rule to query CMAP
+rule query_CMAP:
     input:
         config["input_path"],
     output:
@@ -56,17 +70,17 @@ rule CMAP_query:
         api_key=config["api_key"],
     log:
         expand(
-            "logs/cmap_query_{timestamp}.log",
+            "logs/query_cmap_{timestamp}.log",
             timestamp=get_timestamp(),
         ),
     conda:
         "environments/CMAP_enviroments.yaml"
     shell:
         """
-        python3 scripts/query_CMAP.py {input} {output} --cmap_api_key {params.api_key} > {log} 2>&1
+        python3 scripts/query_cmap.py {input} {output} {params.api_key} > {log} 2>&1
         """
 
-
+# Cleaning rules
 rule clean:
     shell:
         """
