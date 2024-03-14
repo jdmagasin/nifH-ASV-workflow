@@ -234,8 +234,10 @@ stopifnot(sapply(relabundTab[, -1], class) == "numeric")
 
 ## ------------------------------------------------------------------------------
 ##
-## Filter AUIDs from nifh database objects that did not receive an annotation 
-## during AnnotateAuids
+## Filter AUIDs from the nifH database objects that did not receive an annotation
+## during AnnotateAuids.  Annotation could be from the searched DBs, CART, or
+## the presence of the the C-C-AMP pattern (conserved cysteines to coordinate
+## the 4Fe-4S cluster).
 cat("\nFiltering out AUIDs that had no annotation from workflow stage AnnotateAuids:\n")
 
 ## Create a function that filters based on annotation AUIDs

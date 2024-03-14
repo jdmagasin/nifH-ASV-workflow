@@ -11,7 +11,7 @@
 ##  5- CART:  NifH cluster classifier by Frank et 2016
 ##  6- Conserved cysteines check:  Results from a check for C's usually found in the highly conserved
 ##     Switch I and II regions of NifH.  AMP just after the Switch II C is also part of the checked
-##     pattern.
+##     patterns.
 ##
 ## The first 4 tables are from BLAST searches; take the best hit (by E-value). For ARB2017 hits that
 ## lack useful annotation, try to find an equally good and informative hit.
@@ -72,7 +72,7 @@ colnames(annot$Genome879) <- blastHeader
 colnames(annot$MarineDiazo) <- blastHeader
 colnames(annot$UCYNAoligos) <- blastHeader
 colnames(annot$CART) <- c("AUID", "cluster", "subcluster")
-colnames(annot$CCAMP) <- c("AUID", "CCAMP.orfLen", "CCAMP.patLen")
+colnames(annot$CCAMP) <- c("AUID", "orf.len", "hasCC.len", "hasCCAMP.len")
 
 cat("Loading Genome879 taxomomy map...")
 g879taxPath <- file.path("./data", "genome879_acc_taxstring.txt")
@@ -143,9 +143,9 @@ alts <- sapply(
 )
 
 cat(
-    "There were", length(idx), "AUIDs that had top hits to ARB that had unhelpful annotation (e.g. uncultured_microorganism).\n",
-    "Tried to find hits with equally good E-value but helpful annotation.  Was able to improve the annotation for",
-    sum(bestHitsIdx[idx] != alts), "AUIDs.\n"
+    "\nThere were", length(idx), "AUIDs that had top hits in ARB with vague annotation (e.g.\n",
+    "uncultured_microorganism).  I tried to find alternative hits with equally good E-values and\n",
+    "more useful annotation.  I was able to do this for", sum(bestHitsIdx[idx] != alts), "AUIDs.\n"
 )
 bestHitsIdx[idx] <- alts
 stopifnot(length(bestHitsIdx) == length(auids))
@@ -171,7 +171,7 @@ stopifnot(setequal(df$AUID, c(bestHits$ARB2017$AUID, bestHits$Genome879$AUID)))
 
 ## For top Genome879 hits, replace the id (which is an ARB name apparently)
 ## with the genus_species.  Also tack on taxonomic info.
-cat("Looking up more informative names and taxa for the hits to Genome879.\n")
+cat("\nLooking up more informative names and taxa for the hits to Genome879.\n")
 ghits <- as.character(df$Genome879.id)
 idx <- match(ghits, g879taxa$arb_name)
 ghits[!is.na(idx)] <- g879taxa[idx[!is.na(idx)], "genus_species"]
@@ -259,12 +259,31 @@ stopifnot(setequal(df$AUID, c(
 
 #############
 ##
-## Conserved cysteine pattern check
-## Only include CCAMP results for AUIDs that have other annotation.
+## Conserved cysteines check (for C's that coordinate the 4Fe-4S cluster)
+## (1) For AUIDs that have annotation from above sources, include the Switch I/II pattern checks.
+## (2) For AUIDs without annotation, add them to 'df' only if the full CCAMP pattern is there.
 ##
-df <- merge(x = df, y = annot$CCAMP, all.x = T)
+
+auids1 <- df$AUID                                     # AUIDs with annotation (1)
+auids2 <- subset(annot$CCAMP, hasCCAMP.len > 0)$AUID  # For (2), AUIDs with full pattern...
+auids2 <- setdiff(auids, auids1)                      # ...but no annotation
+df <- merge(x = df, y = subset(annot$CCAMP, AUID %in% c(auids1, auids2)), by = "AUID", all = T)
+stopifnot(nrow(df) == length(auids1) + length(auids2))
+
+cat("\nThere are", length(auids1), "AUIDs with annotation from the nifH reference DBs or CART.\n")
+if (length(auids2) > 0) {
+    n <- length(auids2)
+    cat("There are", n, "with no DB or CART annotation but which appear to have cysteines to\n",
+        "coordinate the 4Fe-4S cluster and AMP after the N-terminal cysteine.  These AUIDs will\n",
+        "be included in the annnotation table.\n")
+} else {
+    ## Since annot$CCAMP has a result for each AUID, we can calc AUIDs that lacked annotation.
+    n <- nrow(annot$CCAMP) - length(auids1)
+    cat("All", n, "AUIDs that lack annotation from the DBs or CART also appear to lack paired\n",
+        "cysteines (and \"AMP\") needed to coordinate the 4Fe-4S cluster.\n")
+}
 
 
 ofile <- "auids.annot.raw.tsv"
-cat("Writing out the big annotation table", ofile, "\n")
+cat("\nWriting out the big annotation table", ofile, "with", nrow(df), "AUIDS.\n")
 write.table(df, ofile, quote = F, sep = "\t", row.names = F)
