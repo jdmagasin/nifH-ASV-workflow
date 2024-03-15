@@ -97,9 +97,14 @@ metaTab$SAMPLEID <- x
 
 
 cat("Loading the CMAP environmental variables...")
-## Use read.table() because it is ~instantaneous (vs. seconds) and and avoids renaming of each column
-## with ...<colNumber>.
-cmapTab <- as_tibble(read.table(args["envarCsv"], stringsAsFactors = T, header = T, sep=","))
+## Use read.table() because it is ~instantaneous (vs. seconds) and avoids renaming of each column
+## with ...<colNumber>.  Drop "_transcriptomic" as did for metaTab.  Drop columns that start with
+## "FIXME." (e.g. FIXME.depth) which were added by prepareMetadataForCmap.R to flag samples that
+## required (manual) fixing of illegal values, e.g. "surface" for the "depth".  Such cases should
+## have been fixed.  If not then the CMAP stage would have dropped such samples with a warning.
+cmapTab <- as_tibble(read.table(args["envarCsv"], stringsAsFactors = T, header = T, sep=",")) %>%
+  mutate(SAMPLEID = str_remove(SAMPLEID, "_transcriptomic$")) %>%
+  select(!starts_with("FIXME."))
 cat(
     "done. ", nrow(cmapTab), "samples X", ncol(cmapTab) - 1,
     "CMAP environmental variables.\n\n"
@@ -234,8 +239,10 @@ stopifnot(sapply(relabundTab[, -1], class) == "numeric")
 
 ## ------------------------------------------------------------------------------
 ##
-## Filter AUIDs from nifh database objects that did not receive an annotation 
-## during AnnotateAuids
+## Filter AUIDs from the nifH database objects that did not receive an annotation
+## during AnnotateAuids.  Annotation could be from the searched DBs, CART, or
+## the presence of the the C-C-AMP pattern (conserved cysteines to coordinate
+## the 4Fe-4S cluster).
 cat("\nFiltering out AUIDs that had no annotation from workflow stage AnnotateAuids:\n")
 
 ## Create a function that filters based on annotation AUIDs

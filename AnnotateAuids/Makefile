@@ -108,9 +108,9 @@ NIFHCLUST_ORFS=$(word 1, $(NIFHCLUST_OUTS))
 NIFHCLUST_MAP=$(word 2, $(NIFHCLUST_OUTS))
 
 
-## Check for paired cysteines that might ligate 4Fe-4S. The C's are in the
-## Switch I and II conserved regions. Also check for AMP often in Switch II.
-## See Figure 1 in Schlessman et al. 1998.
+## Check for paired, highly conserved cysteines that might coordinate the 4Fe-4S
+## cluster.  Also check for AMP which often occurs just after the more C
+## terminal cysteine.
 CCAMP_DIR=Check_Paired_Cysteines
 CCAMP_OUTS=$(addprefix $(CCAMP_DIR)/, ccamp.csv)
 CCAMP_TAB=$(word 1, $(CCAMP_OUTS))

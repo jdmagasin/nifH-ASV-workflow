@@ -200,10 +200,10 @@ def clean_columns(df: pd.DataFrame) -> pd.DataFrame:
                 )
 
                 # Clean up columns
-            df["subcluster"] = df["subcluster"].astype(str)
+            df["subcluster"] = df["subcluster"].fillna("")
             df["cluster"] = df["cluster"].apply(
                 lambda x: str(object=int(x)) if not pd.isna(x) else x
-            )
+            ).fillna("")
             # Make new ID columns
             df["MarineDiazo.id"] = (
                 df["MarineDiazo.description"] + ";" + df["MarineDiazo.subject"]
@@ -263,9 +263,9 @@ def make_consensus_id(
                 .fillna(
                     df.apply(
                         lambda row: (
-                            "unknown" + row["cluster"]
-                            if (row["cluster"] == "3" or row["cluster"] == "4")
-                            else "unknown" + row["subcluster"]
+                        "unknown" + row["subcluster"] if (not row["subcluster"] == "")
+                        else "unknown" + row["cluster"] if (not row["cluster"] == "")
+                        else "unknown"
                         ),
                         axis=1,
                     )
