@@ -252,6 +252,6 @@ $(CCAMP_OUTS) &: $(AUID_FASTA) $(NIFHCLUST_ORFS)
 ## Final annotation table with consensus taxon
 $(ANNOT_TAB): $(ANNOT_TAB_RAW)
 	@echo ">>>>> Creating final annotation table $(ANNOT_TAB) which includes consensus taxon <<<<<"
-	@python scripts/make_consensus_taxonomy.py --annotation_table $(ANNOT_TAB_RAW) --output_table $(ANNOT_TAB)
+	@python scripts/make_consensus_taxonomy.py $(ANNOT_TAB_RAW) $(ANNOT_TAB)
 	@echo ">>>>> Finished creating $(ANNOT_TAB) <<<<<"
 	@echo
