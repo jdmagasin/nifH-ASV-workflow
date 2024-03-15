@@ -122,8 +122,9 @@ A new column "consensus_id" is added to the input table (auids.annot.tsv), repre
         default=97.0,
         help="Minimum threshold pid to consider Genome879.id in consensus ID",
     )
-   
+
     return parser
+
 
 def read_tsv(annotation_table: str) -> pd.DataFrame:
     """
@@ -200,10 +201,12 @@ def clean_columns(df: pd.DataFrame) -> pd.DataFrame:
                 )
 
                 # Clean up columns
-            df["subcluster"] = df["subcluster"].fillna("")
-            df["cluster"] = df["cluster"].apply(
-                lambda x: str(object=int(x)) if not pd.isna(x) else x
-            ).fillna("")
+            df["subcluster"] = df["subcluster"].fillna(value="")
+            df["cluster"] = (
+                df["cluster"]
+                .apply(lambda x: str(object=int(x)) if not pd.isna(x) else x)
+                .fillna(value="")
+            )
             # Make new ID columns
             df["MarineDiazo.id"] = (
                 df["MarineDiazo.description"] + ";" + df["MarineDiazo.subject"]
@@ -234,7 +237,9 @@ def clean_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def make_consensus_id(
-    df: pd.DataFrame, min_pid_genome879: float = 97.0,) -> pd.DataFrame:
+    df: pd.DataFrame,
+    min_pid_genome879: float = 97.0,
+) -> pd.DataFrame:
     """
     Create the consensus ID in the DataFrame.
 
@@ -263,9 +268,13 @@ def make_consensus_id(
                 .fillna(
                     df.apply(
                         lambda row: (
-                        "unknown" + row["subcluster"] if (not row["subcluster"] == "")
-                        else "unknown" + row["cluster"] if (not row["cluster"] == "")
-                        else "unknown"
+                            "unknown" + row["subcluster"]
+                            if (not row["subcluster"] == "")
+                            else (
+                                "unknown" + row["cluster"]
+                                if (not row["cluster"] == "")
+                                else "unknown"
+                            )
                         ),
                         axis=1,
                     )
@@ -365,7 +374,7 @@ def main():
         sys.exit(1)
 
     finally:
-			  # success block with print statements
+        # success block with print statements
         if success:
             print(f"\nScript '{script_name}' executed successfully!")
         else:
@@ -374,6 +383,7 @@ def main():
 No consensus ID was made and no output was written! :(
 """
             )
+
 
 # Conditional block ensures that the `main()` function is executed only when
 # called from the command line
