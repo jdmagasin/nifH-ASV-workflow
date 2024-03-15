@@ -151,9 +151,12 @@ if (!KEEP_SAMPS_MISSING_META_OR_CMAP_DATA && length(missingIdx) > 0) {
 
 
 cat("Loading annotation...")
-## Load annotation for ASVs in the abundance table, and split the Genome879
-## taxa string.  Sort by AUID number (consistent with filter_by_annotTab_auid()).
+## Load annotation for ASVs in the abundance table.  Drop ASVs with "unknown"
+## consensus_id unless they have cysteines that might coordinate the 4Fe-4S and
+## the AMP (often in FAMPIRE) in the Switch II region.  Split the Genome879 taxa
+## string.  Sort by AUID number (consistent with filter_by_annotTab_auid()).
 annotTab <- read_tsv(args["annotTsv"], col_types = cols()) %>%
+    filter((consensus_id != "unknown") | (hasCCAMP.len > 0)) %>%
     separate(
       col = Genome879.tax,
       sep = ";", paste0("Genome879.", c("k", "p", "c", "o", "f", "g"))
@@ -248,7 +251,7 @@ cat("\nFiltering out AUIDs that had no annotation from workflow stage AnnotateAu
 ## Create a function that filters based on annotation AUIDs
 ## Returns a filtered df
 filter_by_annotTab_auid <- function(df) {
-  ## Make a key of the AUIDs from the annotation table to filter input df
+  ## Make a key of the AUIDs from the annotation table to filter input df.
   annotTab_auid_key <- annotTab %>%
     select(AUID) %>%
     pull()
