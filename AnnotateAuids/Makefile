@@ -56,6 +56,16 @@ BLASTXGENOME879=$(shell which blastxGenome879.sh)
 ASSIGNNIFHCLUSTERS=$(shell which assignNifHclustersToNuclSeqs.sh)
 
 
+## For blastn searches of the UCYN-A oligo, Marine Diazo DBs, and ARB2017 DBs,
+## use the same effective database size so that E-values can be compared. Take
+## advantage of the hidden parameter "DBpath" to blastnARB2017.sh and parse out
+## the DB size.
+##  -- As of Mar 2024 the ARB2017 DB is 28.6M bases, vs. 121K for the Marine
+##     Diazo DB and 11K for the UCYN-A oligo DB.
+##
+BLASTN_DB_SIZE=$(shell blastdbcmd -info -db `$(BLASTNARB2017) DBpath` | grep 'total bases' | cut -d";" -f2 | tr -c -d [!0-9])
+
+
 ## ARB2017
 ARB2017_DIR=BlastnARB2017
 ARB2017_LOG=log.BlastnARB2017.txt
@@ -115,6 +125,7 @@ CCAMP_DIR=Check_Paired_Cysteines
 CCAMP_OUTS=$(addprefix $(CCAMP_DIR)/, ccamp.csv)
 CCAMP_TAB=$(word 1, $(CCAMP_OUTS))
 
+
 ##
 ## Here come the rules!
 ##
@@ -159,8 +170,9 @@ $(ANNOT_TAB_RAW): $(ARB2017_OUTS) $(GENOME879_OUTS) $(NCDCYANO_OUTS) \
 
 
 $(ARB2017_OUTS) &: $(AUID_FASTA)
-	@details="$(ARB2017_PCTID) %nid, $(ARB2017_QRYCVG) % coverage" ; \
-	echo ">>>>> Searching AUIDs against ARB2017 [blastn, $$details] <<<<<"
+	@echo ">>>>> Searching AUIDs against ARB2017 <<<<<"
+	@details="$(ARB2017_PCTID) %nid, $(ARB2017_QRYCVG) % coverage, DB size $(BLASTN_DB_SIZE) bases" ; \
+	echo "  [blastn parameters:  $$details]"
 	@echo "Once completed, see log file in $(ARB2017_DIR)."
 	@echo "Main outputs are $(ARB2017_OUTS)"
 	@$(BLASTNARB2017) $(AUID_FASTA) $(ARB2017_DIR) $(ARB2017_PCTID) \
@@ -172,6 +184,8 @@ $(ARB2017_OUTS) &: $(AUID_FASTA)
 
 $(GENOME879_OUTS) &: $(AUID_FASTA)
 	@echo ">>>>> Searching AUIDs against Genome879 <<<<<"
+	@details="$(GENOME879_PCTID) %nid, $(GENOME879_QRYCVG) % coverage" ; \
+	echo "  [blastx parameters:  $$details]"
 	@echo "Once completed, see log file in $(GENOME879_DIR)."
 	@echo "Main outputs are $(GENOME879_OUTS)"
 	@$(BLASTXGENOME879) $(AUID_FASTA) $(GENOME879_DIR) $(GENOME879_PCTID) \
@@ -197,14 +211,15 @@ $(NIFHCLUST_OUTS) &: $(AUID_FASTA)
 ## Make the DB, then search and save as ASN.1. Then create tabular and alignment
 ## outputs.
 $(NCDCYANO_OUTS) &: $(AUID_FASTA) $(NCDCYANO_FASTA)
-	@echo ">>>>> Searching AUIDs against additional reference nifH from cyanos and NCDs <<<<<"
+	@echo ">>>>> Searching AUIDs against reference nifH from cyanos and NCDs <<<<<"
+	@details="$(NCDCYANO_PCTID) %nid, $(NCDCYANO_QRYCVG) % coverage, DB size $(BLASTN_DB_SIZE) bases" ; \
+	echo "  [blastn parameters:  $$details]"
 	@mkdir -p $(NCDCYANO_DIR) ; \
 	cd $(NCDCYANO_DIR) ; \
 	echo "Making database" ; \
 	cat $(NCDCYANO_FASTA) | gunzip \
 	  | makeblastdb -dbtype nucl -title NCD_cyano_nifH -out NCD_cyano_nifH ; \
-	echo "Searching database" ; \
-	blastn -db NCD_cyano_nifH -query $(AUID_FASTA) \
+	blastn -db NCD_cyano_nifH -dbsize $(BLASTN_DB_SIZE) -query $(AUID_FASTA) \
 	    -perc_identity $(NCDCYANO_PCTID) -qcov_hsp_perc $(NCDCYANO_QRYCVG) \
 	    -outfmt 11 > asn.tmp ; \
 	echo "Reformatting output" ; \
@@ -220,15 +235,18 @@ $(NCDCYANO_OUTS) &: $(AUID_FASTA) $(NCDCYANO_FASTA)
 
 # Make the DB, then search and save as ASN.1. Then create tabular and alignment outputs.
 $(UCYNA_OLIGOS_OUTS) &: $(AUID_FASTA) $(UCYNA_OLIGOS_FASTA)
-	@echo ">>>>> Searching AUIDs against additional reference nifH from UCYN-A oligos <<<<<"
+	@echo ">>>>> Searching AUIDs against reference nifH from UCYN-A oligos <<<<<"
+	@details="$(UCYNA_OLIGOS_PCTID) %nid, $(UCYNA_OLIGOS_QRYCVG) % coverage, DB size $(BLASTN_DB_SIZE) bases" ; \
+	echo "  [blastn parameters:  $$details]"
 	@mkdir -p $(UCYNA_OLIGOS_DIR) ; \
 	cd $(UCYNA_OLIGOS_DIR) ; \
 	echo "Making database" ; \
 	cat $(UCYNA_OLIGOS_FASTA) | gunzip \
 	  | makeblastdb -dbtype nucl -title UCYNA_oligos_nifH -out UCYNA_oligos_nifH ; \
-	echo "Searching database" ; \
-	blastn -db UCYNA_oligos_nifH -query $(AUID_FASTA) \
-	    -perc_identity $(UCYNA_OLIGOS_PCTID) -qcov_hsp_perc $(UCYNA_OLIGOS_QRYCVG) -outfmt 11 > asn.tmp ; \
+	echo "Searching database. Using effective DB size $(BLASTN_DB_SIZE) bases." ; \
+	blastn -db UCYNA_oligos_nifH -dbsize $(BLASTN_DB_SIZE) -query $(AUID_FASTA) \
+	    -perc_identity $(UCYNA_OLIGOS_PCTID) -qcov_hsp_perc $(UCYNA_OLIGOS_QRYCVG) \
+	    -outfmt 11 > asn.tmp ; \
 	echo "Reformatting output" ; \
 	blast_formatter -archive asn.tmp -outfmt 0 -num_alignments 10 -num_descriptions 100 \
 	  | gzip > `basename $(UCYNA_OLIGOS_ALN)` ; \
