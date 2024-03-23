@@ -5,7 +5,7 @@
 usageStr = "
     filterAuids auidAbundTable.tsv{.gz}  auids.fasta  minLen maxLen  {contams}  {nifH-like dir}
 
-  The two optional parameters 5 and 6 are from the post-DADA2-pipeline checkers:
+  The two {optional} parameters are from the post-DADA2-pipeline checkers:
   
    - contams is the tabular BLAST output from
      Contaminants/check_nifH_contaminants.sh, e.g. something like blast.96id.out
@@ -31,7 +31,7 @@ contamBlastOut   <- args[5] # optional
 nifHlikeCheckDir <- args[6] # optional (#2 must be present to use this)
 
 
-options(width = 100) # More columns for printing.
+options(width = 120) # More columns for printing.
 
 
 ##------------------------------------------------------------------------------
@@ -80,6 +80,23 @@ RecordDeltasAtFilterStep <- function(stage,
     gFilterStages <<- rbind(gFilterStages, df)  # Note the global assignment operator.
 }
 
+## Record number of reads in each sample at the end of the specified 'stage'.  Pass an
+## abundance table (AUID rows x Sample cols)
+gFilterStages.samples <- data.frame()
+RecordSampleReadsAfterFilterStep <- function(stage, atab)
+{
+    df <- data.frame(colnames(atab), colSums(atab))
+    colnames(df) <- c('Sample', stage)
+    stopifnot(!(stage %in% colnames(gFilterStages.samples)))
+    if (nrow(gFilterStages.samples) > 0) {
+        ## One stage of FilterAuids can only drop samples as it progresses, so all.x=T, and
+        ## make the counts be 0 for the dropped samples after the stage at which dropped.
+        df <- merge(gFilterStages.samples, df, by='Sample', all.x = T)
+        df[is.na(df)] <- 0
+    }
+    gFilterStages.samples <<- df
+}
+
 
 ##------------------------------------------------------------------------------
 ##
@@ -94,6 +111,7 @@ cat("Loading AUID abundance table...")
 stopifnot(file.exists(auidAbundTabName))
 atab <- read.table(auidAbundTabName)
 cat("done!  Table is",dim2desc(dim(atab)),"\n")
+RecordSampleReadsAfterFilterStep('Initial', atab)
 
 cat("Loading FASTA...")
 aseqs <- readFasta(auidFastaName)
@@ -159,6 +177,7 @@ if (!is.null(contamAsvs)) {
     RecordDeltasAtFilterStep("Contaminants",
                              sum(atab),  totsBefore['reads'],
                              nrow(atab), totsBefore['asvs'])
+    RecordSampleReadsAfterFilterStep("Contaminants", atab)
 }
 
 
@@ -187,8 +206,8 @@ DropRareAuids <- function(tab, minSamps=AUID_MIN_SAMPS,
 {
     cat("Threw out AUIDs that did not have at least", minReadsEachSamp, "reads",
         "in at least", minSamps, "samples,\n",
-	"or at least", oneHitWonderReads, "reads in one sample.\n",
-	"This reduced the abundance table from", dim2desc(dim(tab)),"to\n")
+        "or at least", oneHitWonderReads, "reads in one sample.\n",
+        "This reduced the abundance table from", dim2desc(dim(tab)),"to\n")
     idx <- which(apply(tab, 1, function (rowv) {
                      (sum(rowv >= minReadsEachSamp) >= minSamps) ||
                      (any(rowv > oneHitWonderReads))
@@ -200,13 +219,18 @@ DropRareAuids <- function(tab, minSamps=AUID_MIN_SAMPS,
 }
 
 totsBefore <- c(reads=sum(atab), asvs=nrow(atab))
-x <- DropSmallSamples(atab)
-x <- DropRareAuids(x)
-atab <- x
-rm(x)
+atab <- DropSmallSamples(atab)
+RecordDeltasAtFilterStep("Drop small samples",
+                         sum(atab),  totsBefore['reads'],
+                         nrow(atab), totsBefore['asvs'])
+RecordSampleReadsAfterFilterStep("Drop small samples", atab)
+
+totsBefore <- c(reads=sum(atab), asvs=nrow(atab))
+atab <- DropRareAuids(atab)
 RecordDeltasAtFilterStep("Drop rare ASVs",
                          sum(atab),  totsBefore['reads'],
                          nrow(atab), totsBefore['asvs'])
+RecordSampleReadsAfterFilterStep("Drop rare ASVs", atab)
 
 
 ##------------------------------------------------------------------------------
@@ -267,6 +291,7 @@ if (!is.null(nifHlike)) {
             RecordDeltasAtFilterStep("Drop NifH negatives",
                                      sum(atab),  totsBefore['reads'],
                                      nrow(atab), totsBefore['asvs'])
+            RecordSampleReadsAfterFilterStep("Drop NifH negatives", atab)
         }
     } else { cat("Not filtering the NifH-like \"negatives\".\n") }
     cat("Not filtering the NifH-like \"unsures\".\n")
@@ -321,7 +346,10 @@ atab <- atab[IfFilterByLens(atab, lenFiltRange[1], lenFiltRange[2], TRUE), ]
 RecordDeltasAtFilterStep("Length based",
                          sum(atab),  totsBefore['reads'],
                          nrow(atab), totsBefore['asvs'])
+RecordSampleReadsAfterFilterStep("Length based", atab)
 
+## This file is somewhat redundant now that gFilterStages.samples gets written out
+## at the end of the script.
 f <- paste0("lenFilterImpactsToSamps.",paste(lenFiltRange, collapse='.'),".tsv")
 write.table(x, f, sep="\t", quote=F)
 cat("Wrote table",f,"of % reads kept/lost for each sample.\n")
@@ -340,6 +368,9 @@ print(gFilterStages)
 cat("\n")
 ## Useful to have this for summary stats/plots.
 write.table(gFilterStages, 'filterAuids_byStages.tsv', quote=FALSE, sep="\t")
+
+## Save a table of all the counts retained in each sample at each stage.
+write.table(gFilterStages.samples, 'filterAuids_samplesByStages.tsv', quote=F, sep="\t")
 
 cat("Writing out", dim2desc(dim(atab)), "abundance table",FOUT,"...")
 gcon <- gzfile(FOUT, "wb")
