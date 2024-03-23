@@ -13,6 +13,7 @@ KEEP_SAMPS_MISSING_META_OR_CMAP_DATA <- TRUE
 ## conditionally include filtering steps hasSampMeta and hasEnvMeta.
 stageRename <- c(ReadsPipeline                     = 'From pipeline',
                  ReadsGatherAsvs                   = 'GatherAsvs',
+                 ReadsFilterAuids.SmallSamp        = 'Undersequenced samples',
                  ReadsFilterAuids.Rare             = 'Rare',
                  ReadsFilterAuids.NonNifH          = 'Not nifH-like',
                  ReadsFilterAuids.Length           = 'Too short or long',
@@ -130,52 +131,28 @@ workflowTable <- x
 
 ##################################################
 ## FilterAuids
-##   See FilterAuids/scripts/filterAuids.R for the order of filters.
+## March 21, 2024, I added a table that records for each sample the reads retained at
+## the end of each FilterAuids stage. So no longer neeeded to back-calculate, yay!
 ##   1. Report contaminants but do not remove them (b/c RETAIN_CONTAMINANTS is T)
-##   2. Drop small samples and rare AUIDs
-##   3. Drop non-nifH-like AUIDs (b/c RETAIN_NON_NIFH_LIKE is F)
-##   4. Length-based filtering
-## Unfortunately, FilterAuids does not record reads retained for each sample and
-## stage. (filterAuids_byStages.tsv is overall.)  It does output
-## lenFilterImpactsToSamps.280.360.tsv, which I can used to back calculate the
-## num reads at the end of step #3.  And I can identify non-nifH AUIDs using
-## FilterAuids/Check_NifH_like/negatives.ids.
-
-filtAbunds <- read.table(StageFile('FilterAuids','auid.abundances.filtered.tsv.gz'))
-lenFiltTab <- read.table(StageFile('FilterAuids','lenFilterImpactsToSamps.280.360.tsv'))
-stopifnot(rownames(lenFiltTab) %in% workflowTable$SampleWF)      # Reverse is not true
-stopifnot(setequal(rownames(lenFiltTab), colnames(filtAbunds)))  # Identical samples
-negIds <- readLines(StageFile('FilterAuids', file.path('Check_NifH_like','negatives.ids')))
-
-x <- data.frame(endOf4 = colSums(filtAbunds)[rownames(lenFiltTab)])  # tot reads each sample
-x$endOf3 <- round(x$endOf4 / (lenFiltTab$IN/100))  # % retained in #4 tells us num at end of #3
-
-## No great way to get to reads at end of #2 unless re-read this table.
-## That gets us the reads in non-nifH-like AUIDs, which we sum by sample
-nonNifH <- read.table(StageFile('GatherAsvs','asv2auid.abundances.tsv.gz'))[negIds,rownames(x)]
-stopifnot(!is.na(nonNifH))
-nonNifH <- colSums(nonNifH)  # by sample
-stopifnot( names(nonNifH) == rownames(x) )
-x$endOf2 <- x$endOf3 + nonNifH  # add back the non-nifH-like reads that got dropped in #3
-
-## Improve the names, and set up column order before the merge.
-x <- x[,c('endOf2','endOf3','endOf4')]
-colnames(x) <- sub('endOf4', 'ReadsFilterAuids.Length',
-                   sub('endOf3', 'ReadsFilterAuids.NonNifH',
-                       sub('endOf2', 'ReadsFilterAuids.Rare', colnames(x))))
-## Check strictly non-increasing
-x[is.na(x)] <- 0
-stopifnot(sum(x[,1] < x[,2]) == 0)
-stopifnot(sum(x[,2] < x[,3]) == 0)
+##   2. Drop small samples
+##   3. Drop rare AUIDs
+##   4. Drop non-nifH-like AUIDs (b/c RETAIN_NON_NIFH_LIKE is F)
+##   5. Length-based filtering
+filtTab <- read.table(StageFile('FilterAuids','filterAuids_samplesByStages.tsv'),
+                      sep="\t", header=T)
+stopifnot(!is.na(filtTab)) # Expect 0's in stage i+1,2,3 if a sample was dropped at stage i
+stopifnot(colnames(filtTab) == c("Sample", "Initial", "Contaminants", "Drop.small.samples",
+                                 "Drop.rare.ASVs", "Drop.NifH.negatives", "Length.based"))
+filtTab <- filtTab[,-c(2,3)]  # Initial is same as GatherAsvs, and we don't drop Contaminants.
+## Shorten/simplify names
+colnames(filtTab) <- c('SampleWF',
+                       paste0('ReadsFilterAuids.', c('SmallSamp','Rare','NonNifH','Length')))
 
 ## Merge
-x$SampleWF <- rownames(x)
-x <- merge(workflowTable, x, by='SampleWF', all=T)
+x <- merge(workflowTable, filtTab, by='SampleWF', all=T)
 x[is.na(x)] <- 0
 workflowTable <- x
-
-## Clean up
-rm(filtAbunds, lenFiltTab, negIds, nonNifH, x)
+rm(filtTab, x)
 
 
 ##################################################
