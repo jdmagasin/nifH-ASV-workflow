@@ -18,8 +18,10 @@ workspaceObjectDescriptions <- "
   These objects comprise the nifH ASV database:
      asvSeqs      ASV sequences, 1:1 with abundTab. Each ASV has an ID of the form 'AUID.<number>'.
                   The number only ensures uniqueness.  It does not indicate the ASV's abundance.
-     abundTab     ASV abundance counts for all retained samples.  Every count is an integer so the
-                  table can be used with the R vegan package.
+     abundTab     ASV abundance counts for all retained samples. Samples with 0 reads are excluded,
+                  for example, those dropped by FilterAuids, or by WorkspaceStartup when ASVs
+                  with no annotation get removed.  Every count is an integer so the table can be
+                  used with the R vegan package.
      relabundTab  ASV relative abundances for all retained samples.
      annotTab     Annotation for ASVs in abundTab.
      metaTab      Metadata for samples in abundTab.
@@ -41,7 +43,8 @@ workspaceObjectDescriptions <- "
 options(width = 110) # Assume 110 cols for wide-ish table printing.
 
 ## 16 Nov 2023: For now, do not drop samples from the abundance table that are missing
-## CMAP or meta-data. I don't yet have CMAP data for ~100 transcriptomic samples.
+## CMAP or meta-data. They could still be dropped if they have 0 total reads because
+## the CMAP and meta-data tables must remain in sync with abundance tables.
 KEEP_SAMPS_MISSING_META_OR_CMAP_DATA <- TRUE
 
 args <- commandArgs(T)
@@ -83,6 +86,8 @@ abundTab <- as_tibble(abundTab) %>%
     rename_with(~ str_replace(.x, "^.+___", "")) %>%
     select(AUID, everything())
 cat("done. ", nrow(abundTab), "ASVs X", ncol(abundTab) - 1, "working samples.\n")
+cat("Note that", length(which(abundTab %>% select(-AUID) %>% colSums() == 0)),
+    "samples have 0 total reads. They will be dropped after ASV annotations are checked.\n")
 
 
 cat("Loading sample metadata...")
@@ -109,45 +114,6 @@ cat(
     "done. ", nrow(cmapTab), "samples X", ncol(cmapTab) - 1,
     "CMAP environmental variables.\n\n"
 )
-
-
-x <- names(which(abundTab %>% select(-AUID) %>% colSums() == 0))
-if (length(x) > 0) {
-    cat("Dropping samples that have 0 reads.  ")
-    abundTab <- abundTab %>% select(!contains(x))
-    cat(length(x), "samples dropped:\n")
-    cat(strwrap(x),"\n\n")
-}
-
-
-cat("Shrinking CMAP and sample metadata tables to have just the samples in the abundance table.\n")
-sampIds <- setdiff(colnames(abundTab), "AUID")
-cmapTab <- cmapTab %>% filter(SAMPLEID %in% sampIds)
-missingIdx <- idx <- which(!sampIds %in% cmapTab$SAMPLEID)
-cat(
-    "  ", length(idx), "samples in the abundance table have no environmental data",
-    "(sampsWithoutEnvdata.txt)\n"
-)
-writeLines(sampIds[idx], "sampsWithoutEnvdata.txt")
-
-metaTab <- metaTab %>% filter(SAMPLEID %in% sampIds)
-idx <- which(!sampIds %in% metaTab$SAMPLEID)
-cat(
-    "  ", length(idx), "samples in the abundance table have no sample metadata",
-    "(sampsWithoutMetadata.txt)\n\n"
-)
-writeLines(sampIds[idx], "sampsWithoutMetadata.txt")
-missingIdx <- union(idx, missingIdx)
-
-
-if (!KEEP_SAMPS_MISSING_META_OR_CMAP_DATA && length(missingIdx) > 0) {
-    cat(
-        "Dropping", length(missingIdx), "samples from the ASV abundance table",
-        "that lack environmental and/or metadata.\n\n"
-    )
-    abundTab <- abundTab %>% select(!contains(sampIds[missingIdx]))
-    ## fixme: If going to do this, perhaps should drop these samples from metaTab.
-}
 
 
 cat("Loading annotation...")
@@ -231,17 +197,6 @@ asvNCDs <- GetTaxa("p", "Cyanobacteria", invert = T)
 
 ## ------------------------------------------------------------------------------
 ##
-## Make a relative abundance table
-##
-
-relabundTab <- abundTab %>% mutate_at(vars(-AUID), ~ . / sum(.))
-## Verify all columns sum to ~1, and all cols are type double.
-stopifnot(abs((relabundTab %>% select(-AUID) %>% colSums()) - 1) < 1e-9)
-stopifnot(sapply(relabundTab[, -1], class) == "numeric")
-
-
-## ------------------------------------------------------------------------------
-##
 ## Filter AUIDs from the nifH database objects that did not receive an annotation
 ## during AnnotateAuids.  Annotation could be from the searched DBs, CART, or
 ## the presence of the the C-C-AMP pattern (conserved cysteines to coordinate
@@ -266,20 +221,18 @@ filter_by_annotTab_auid <- function(df) {
   return(filt_df)
 }
 
-# Filter abundance tables
+# Filter abundance table and sequence file, removing unannotated ASVs
 abundTab <- filter_by_annotTab_auid(abundTab)
-relabundTab <- filter_by_annotTab_auid(relabundTab)
-
-# Filter sequence file
 asvSeqs <- filter_by_annotTab_auid(asvSeqs)
+cat("After filtering out unannotated ASVs, there are a total of",
+    length(which(abundTab %>% select(-AUID) %>% colSums() == 0)),
+    "samples that have 0 total reads. They will be dropped shortly.\n")
 
 # Verify that all objects and their associated files have the same AUIDs in the same order.
 stopifnot(identical(asvSeqs$AUID, abundTab$AUID) &&
-          identical(asvSeqs$AUID, relabundTab$AUID) &&
           identical(asvSeqs$AUID, annotTab$AUID))
 
 # Convert filtered ASV sequences to FASTA format
-# Double check this this is ok to do
 stopifnot(setequal(asvSeqs$AUID, abundTab$AUID))
 cat("ASVs in FASTA and abundance table are 1:1.\n")
 asvSeqs_fasta <- paste0(">", asvSeqs$AUID, "\n", asvSeqs$sequence, collapse = "\n")
@@ -316,6 +269,61 @@ if (x > 0) {
     cat("After this step there are still", tot.initial, "reads.\n")
 }
 
+
+##
+## Removal of ASVs lacking annotation could (and does) renders some samples empty.  Also, a few
+## samples are empty when received by WorkspaceStartup since FilterAuids does not do a final pass
+## after its ASV filtering.  So here we remove any completely empty samples.
+##
+x <- names(which(abundTab %>% select(-AUID) %>% colSums() == 0))
+if (length(x) > 0) {
+    cat("Dropping samples that have 0 reads.  ")
+    abundTab    <- abundTab %>% select(!contains(x))
+    cat(length(x), "samples dropped:\n")
+    cat(strwrap(x),"\n\n")
+}
+
+cat("Shrinking CMAP and sample metadata tables to have just the samples in the abundance table.\n")
+sampIds <- setdiff(colnames(abundTab), "AUID")
+cmapTab <- cmapTab %>% filter(SAMPLEID %in% sampIds)
+missingIdx <- idx <- which(!sampIds %in% cmapTab$SAMPLEID)
+cat(
+    "  ", length(idx), "samples in the abundance table have no environmental data",
+    "(sampsWithoutEnvdata.txt)\n"
+)
+writeLines(sampIds[idx], "sampsWithoutEnvdata.txt")
+
+metaTab <- metaTab %>% filter(SAMPLEID %in% sampIds)
+idx <- which(!sampIds %in% metaTab$SAMPLEID)
+cat(
+    "  ", length(idx), "samples in the abundance table have no sample metadata",
+    "(sampsWithoutMetadata.txt)\n\n"
+)
+writeLines(sampIds[idx], "sampsWithoutMetadata.txt")
+missingIdx <- union(idx, missingIdx)
+
+
+if (!KEEP_SAMPS_MISSING_META_OR_CMAP_DATA && length(missingIdx) > 0) {
+    cat(
+        "Dropping", length(missingIdx), "samples from the ASV abundance table",
+        "that lack environmental and/or metadata.\n\n"
+    )
+    abundTab <- abundTab %>% select(!contains(sampIds[missingIdx]))
+    ## fixme: If going to do this, perhaps should drop these samples from metaTab.
+}
+
+
+## ------------------------------------------------------------------------------
+##
+## Make a relative abundance table
+##
+
+relabundTab <- abundTab %>% mutate_at(vars(-AUID), ~ . / sum(.))
+## Verify all columns sum to ~1, and all cols are type double.
+stopifnot(abs((relabundTab %>% select(-AUID) %>% colSums()) - 1) < 1e-9)
+stopifnot(sapply(relabundTab[, -1], class) == "numeric")
+
+
 ##
 ## Make sure tables are coherent: AUIDs and samples work across tables.
 ## Compare to abundTab.
@@ -326,8 +334,9 @@ if (!KEEP_SAMPS_MISSING_META_OR_CMAP_DATA) {
     stopifnot(setdiff(colnames(abundTab), cmapTab$SAMPLEID) == "AUID") # CMAP for all samps
 }
 stopifnot(colnames(abundTab) == colnames(relabundTab)) # Samps 1:1 in abund tables
-stopifnot(abundTab$AUID == relabundTab$AUID) # ASVs 1:1 in abund tables
-stopifnot(setequal(asvSeqs$AUID, abundTab$AUID)) # ASVs 1:1 with fasta
+stopifnot(identical(asvSeqs$AUID, abundTab$AUID))      # ASVs 1:1 in abund tables and FASTA
+stopifnot(identical(asvSeqs$AUID, relabundTab$AUID))
+stopifnot(identical(asvSeqs$AUID, annotTab$AUID))
 stopifnot(asvCyanos %in% abundTab$AUID)
 stopifnot(asvNCDs %in% abundTab$AUID)
 
