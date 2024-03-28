@@ -257,7 +257,38 @@ rm(x)
 
 cat("\nWriting out table of reads retained at each stage:  workflowTable.csv\n")
 write.csv(format(workflowTable, digits=2), file='workflowTable.csv', row.names=F, quote=F)
-##save.image('workflowReadsAtEachStage.RData')
+
+
+## Also prepare Table 5 for the manuscript which has mean reads (over samples) retained for each
+## study at each stage of the workflow, and some overall stats in the last three rows (across
+## studies).
+dat <- read.csv('workflowTable.csv')[,-c(1,2,4)]
+dat$PctRetained <- 100 * dat$ReadsWorkspaceStartup.noAnnot / dat$ReadsPipeline
+dat$PctRetained[is.nan(dat$PctRetained)] <- 0
+
+## Top rows of table will have the per study stats:
+## For each stage (column) take the mean but only using samples that have reads.  Alternatively
+## could restrict to just the samples that make it into the ASV database, but some of them have 0
+## reads because after unannotated ASVs were dropped empty samples were not scrubbed. Perhaps
+## there's some value in having these empty samples in the DB (e.g. in the CMAP and meta data) so I
+## have at this time decided not to scrub them.
+studyMeans <- aggregate(.~Study, dat, function (v) mean(v[v>0]))
+
+## Last three rows have mean, median, and sums taken across all samples:
+overall <- matrix(c(apply(dat[,-1], 2, function (v) mean(v[v>0])),
+                    apply(dat[,-1], 2, function (v) median(v[v>0])),
+                    colSums(dat[,-1])),
+                  nrow = 3, byrow=T,
+                  dimnames = list(c('mean','median','sum'), colnames(dat)[-1]))
+overall['sum','PctRetained'] <- NA
+
+## Construct the final table
+dat <- rbind(studyMeans,
+             data.frame(Study = rownames(overall), overall))
+rownames(dat) <- NULL
+cat("\nWriting out table_5_for_manuscript.csv\n")
+write.csv(format(dat, digits=2), file='table_5_for_manuscript.csv', row.names=F, quote=F)
+rm(dat, overall, studyMeans)
 
 
 ##################################################
