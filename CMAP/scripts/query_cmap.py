@@ -447,8 +447,8 @@ The targets and their parameters have been set and reflect those used to generat
 A ***valid API key is required** to query the CMAP repository. The script will fail if a valid API key is not passed. Your API key can be obtained here (https://simonscmap.com/apikeymanagement). If using this script directly, see Usage below. If the accompanied Snakefile is used to manage the this script within the CMAP stage of the nifH workflow, your API key needs to be added to the associated config file. 
 
 """),
-    formatter_class=RawTextHelpFormatter,        
-    usage=f"{script_name} <input_path> <output_path> <your_cmap_api_key> -h,--help",
+    formatter_class=RawTextHelpFormatter,
+    usage=f"{script_name} [-h,--help] <input_path> <output_path> <your_cmap_api_key>",
     )
     # Add arguments for input, output, and CMAP API key
     parser.add_argument(
@@ -549,10 +549,10 @@ If error states "'None' is missing", an argument was not pass. Please see usage 
     finally:
         # success block with print statements
         if success:
-            print(f"Script '{script_name}' executed successfully!!")
+            print(f"\nScript '{script_name}' executed successfully!!")
         else:
             print(
-                f"""Script '{script_name}' exited with an error.
+                f"""\nScript '{script_name}' exited with an error.
 The CMAP repository was not queried and no output was not written!
 """
             )
