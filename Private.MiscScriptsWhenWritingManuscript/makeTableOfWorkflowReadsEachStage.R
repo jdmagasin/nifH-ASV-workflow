@@ -6,28 +6,26 @@
 ##
 
 ## Set this as in make_nifH_ASV_database.R.  By July 2023 we decided this was TRUE.
+## March 28, 2024: This flag used to be used to conditionally track whether ASVs and
+## samples were discarded for lack of sample meta/envdata. But WorkspaceStartup changed
+## slightly and it is currently not possible (I think) to back-calculate these losses.
+## So I have simplified the code below to NOT use this flag.
 KEEP_SAMPS_MISSING_META_OR_CMAP_DATA <- TRUE
 
 ## Create descriptions for the different stages of the workflow.  For clarity do this here even
-## though stageRename is only needed in the plotting code far below.  Note the 'hack' to
-## conditionally include filtering steps hasSampMeta and hasEnvMeta.
+## though stageRename is only needed in the plotting code far below.
 stageRename <- c(ReadsPipeline                     = 'From pipeline',
                  ReadsGatherAsvs                   = 'GatherAsvs',
                  ReadsFilterAuids.SmallSamp        = 'Undersequenced samples',
                  ReadsFilterAuids.Rare             = 'Rare',
                  ReadsFilterAuids.NonNifH          = 'Not nifH-like',
                  ReadsFilterAuids.Length           = 'Too short or long',
-                 ReadsWorkspaceStartup.notEmpty    = 'Empty samples',
-                 hack_hasSampMeta                  = 'No metadata',
-                 hack_hasEnvMeta                   = 'No CMAP data',
+                 ## WorkspaceStartup currently only removes ASVs for lack of annotation.
+                 ## It also removes 25 empty samples, 19 of which became empty due to having
+                 ## only ASVs with no annotation, and 6 which were left over after FilterAuids.
+                 ## Not worth it to track the 19 vs. the 6 for sample loss, and all the ASV
+                 ## loss is strictly due to "No annotation".
                  ReadsWorkspaceStartup.noAnnot     = 'No annotation')
-if (KEEP_SAMPS_MISSING_META_OR_CMAP_DATA) {
-    ## make_nifH_ASV_database.R didn't drop samples that lacked meta or CMAP data.
-    stageRename <- stageRename[-grep('^hack', names(stageRename))]
-} else {
-    ## We DID drop samples that lacked meta or CMAP data so fixup those entries.
-    names(stageRename) <- sub('^hack_', 'ReadsWorkspaceStartup.', names(stageRename))
-}
 stageRename <- rev(stageRename)  # plot stages top-to-bottom
 
 
@@ -173,18 +171,39 @@ metaTsamples <- readLines(StageFile('GatherMetadata','metatranscriptomic_samples
 ## WorkspaceStartup (end of)
 
 ## See WorkspaceStartup's Makefile and make_nifH_ASV_database.R for filtering steps in order.
-##  - Drop samples with 0 reads.
-##  - Show effects of removing samples with no sample metadata, (conditionally)
-##  - Show effects of removing samples with no environmental metadata. (conditionally)
-##  - Show  effects of removing ASVs that have no annotation.
+##  - Remove ASVs that have no annotation.
+##  - Drop samples with 0 reads.  Mainly due to removal of ASVs lacking annotation.
+## Next two are not recorded and not sure currently possible to e.g. back-calculate from
+## the final abundance table how many ASVs were lost due to missing metadata as opposed to
+## not having annotation.  The workflow does NOT drop samples for lack of metadata currently
+## so there is no reason to track this now.
+##  - Remove samples with no sample metadata, (conditionally)
+##  - Remove samples with no environmental metadata. (conditionally)
 ##
+stopifnot(KEEP_SAMPS_MISSING_META_OR_CMAP_DATA)  # check previous statement
 
-## Drop samples with 0 reads.  Nothing to do but copy the previous stage (which
-## might have 0 reads).
-workflowTable$ReadsWorkspaceStartup.notEmpty <- workflowTable[,ncol(workflowTable)]
+## Get for each sample the number of reads in the final abundance table.
+ReadsInFinalAbundanceTable <- function(colName = "final_reads")
+{
+    load(StageFile('WorkspaceStartup','workspace.RData'))
+    stopifnot(colnames(abundTab)[1] == 'AUID')
+    sampTots <- colSums(abundTab[,-1])
+    df <- data.frame(Sample = names(sampTots), tots = as.numeric(sampTots), row.names = NULL)
+    colnames(df) <- c('Sample', colName)
+    df
+}
+
+y <- ReadsInFinalAbundanceTable("ReadsWorkspaceStartup.noAnnot")
+## The workflowTable might have samples not in the final abundance table so pass all.x = T.
+workflowTable <- merge(workflowTable, y, by = 'Sample', all.x = T)
+idx <- which(is.na(workflowTable$ReadsWorkspaceStartup.noAnnot))
+workflowTable$ReadsWorkspaceStartup.noAnnot[idx] <- 0
+rm(y,idx)
+
 
 ## Drop specified samples from the passed workflow table.  Duplicate the rightmost column in wftab
 ## but name it colName and make the 'samps' have 0 total counts.
+## This function is only used if KEEP_SAMPS_MISSING_META_OR_CMAP_DATA, but that must be FALSE.
 DropSamps <- function(wftab, samps, colName)
 {
     ## Use grep so that we can find the sample even if R prefixed with an X to make it a valid
@@ -200,7 +219,7 @@ DropSamps <- function(wftab, samps, colName)
     wftab
 }
 
-
+stopifnot(KEEP_SAMPS_MISSING_META_OR_CMAP_DATA)  # See comment at top of file.
 if (!KEEP_SAMPS_MISSING_META_OR_CMAP_DATA) {
     ## Now remove samples that had no sample metadata
     dropme <- readLines(StageFile('WorkspaceStartup','sampsWithoutMetadata.txt'))
@@ -213,27 +232,6 @@ if (!KEEP_SAMPS_MISSING_META_OR_CMAP_DATA) {
     workflowTable <- x
 }
 
-
-## Get for each sample the number of reads in the final abundance table.
-## Because dropping of ASVs with no annotation is the final filtering step in
-## WorkspaceStartup, these read counts minus those in the rightmost column of
-## workflowTable equal the reads lost due to lack of annotation.
-ReadsInFinalAbundanceTable <- function(colName = "final_reads")
-{
-    load(StageFile('WorkspaceStartup','workspace.RData'))
-    stopifnot(colnames(abundTab)[1] == 'AUID')
-    sampTots <- colSums(abundTab[,-1])
-    df <- data.frame(Sample = names(sampTots), tots = as.numeric(sampTots), row.names = NULL)
-    colnames(df) <- c('Sample', colName)
-    df
-}
-
-y <- ReadsInFinalAbundanceTable("ReadsWorkspaceStartup.noAnnot")
-## The workflowTable might have samples not in the final abundance table so all.x = T.
-workflowTable <- merge(workflowTable, y, by = 'Sample', all.x = T)
-idx <- which(is.na(workflowTable$ReadsWorkspaceStartup.noAnnot))
-workflowTable$ReadsWorkspaceStartup.noAnnot[idx] <- 0
-rm(y,idx)
 
 
 cat("Checking that all 'Reads' columns in the table are numeric.\n")
@@ -267,11 +265,7 @@ dat$PctRetained <- 100 * dat$ReadsWorkspaceStartup.noAnnot / dat$ReadsPipeline
 dat$PctRetained[is.nan(dat$PctRetained)] <- 0
 
 ## Top rows of table will have the per study stats:
-## For each stage (column) take the mean but only using samples that have reads.  Alternatively
-## could restrict to just the samples that make it into the ASV database, but some of them have 0
-## reads because after unannotated ASVs were dropped empty samples were not scrubbed. Perhaps
-## there's some value in having these empty samples in the DB (e.g. in the CMAP and meta data) so I
-## have at this time decided not to scrub them.
+## For each stage (column) take the mean but only using samples that have reads.
 studyMeans <- aggregate(.~Study, dat, function (v) mean(v[v>0]))
 
 ## Last three rows have mean, median, and sums taken across all samples:
@@ -299,17 +293,10 @@ cat("Preparing plot that shows for each study how the workflow progressed",
 
 wft <- workflowTable
 
-## Simplest if drop a few empty-from-pipes now.  'notEmpty' can still show >0 in plot.
+## Simplest if drop a few empty-from-pipes now.
 idx <- which(wft$ReadsPipeline > 0)
 cat(length(idx),"of",nrow(wft),"samples have >0 reads from the pipeline.  Using only them.\n")
 wft <- wft[idx,]
-
-## When WorkspaceStartup drops empty samples, of course that does not change the number of reads
-## retained by any sample, as next line verifies.
-stopifnot( wft$ReadsWorkspaceStartup.notEmpty - wft$ReadsFilterAuids.Length == 0 )
-## Therefore, it is not helpful to show ReadsWorkspaceStartup.notEmpty in the plots.
-wft <- wft[, colnames(wft) != 'ReadsWorkspaceStartup.notEmpty']
-stageRename <- stageRename[names(stageRename) != 'ReadsWorkspaceStartup.notEmpty']
 
 cat("Preparing data for ggplot...\n")
 ## Have reads at each stage.  Want the % of reads lost at each stage. Get it
@@ -323,8 +310,11 @@ dat.m$variable <- factor(dat.m$variable,
                          levels = names(stageRename), labels = as.character(stageRename))
 colnames(dat.m) <- c('Sample','Study','Filter','value')
 rm(x,dat)
-## Above we reported a few cases where 1-2 reads were gained, probably a bug in this
-## script which must use approx %'s to estimate length-based filtering.  Set them to 0.
+## In the first version of this script there used to be a few cases where 1-2 reads were gained,
+## probably a bug where this script used approx %'s to estimate length-based filtering.  Then
+## FilterAuids changed to track read losses at every step and the (now) "WARNING" above does
+## not happen.  However, I'm leaving in the next line which used to quash any read gains in
+## order to keep the x axis was strictly positive.
 dat.m[which(dat.m$value < 0),'value'] <- 0
 
 ## Which studies contribute the most data (after all filtering)?
@@ -383,6 +373,8 @@ ggsave(filename='workflowReadsRetainedEachStage_overall_box.png', plot=g.box,
        width=11.5/6, height=7/4, units='in', dpi=144)
 
 cat("Done. See workflowReadsRetainedEachStage.png and the 'overall' versions.\n",
-    "Note that stage ReadsWorkspaceStartup.notEmpty is not shown because it discards\n",
-    "empty samples and does not impact the read counts.\n")
+    "Note that ReadsWorkspaceStartup.noAnnot includes the dropping of all empty\n",
+    "samples after filtering of ASVs lacking annotation. A few samples were empty\n",
+    "as output by FilterAuids.  See the WorkspaceStartup log. For the plots and tables\n",
+    "output here, it's not worth distinguishing.\n")
 quit(save='no')

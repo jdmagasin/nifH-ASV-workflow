@@ -182,6 +182,34 @@ x <- pipe.samps[,colnames(pipe.samps) != 'tag']
 write.csv(format(x, digits=2), file=fnam, row.names=F, quote=F)
 
 
+
+## Also prepare Table 4 for the manuscript which has mean reads (over samples) retained for each
+## study at each step of the pipeline, and some overall stats in the last three rows (across
+## studies).
+dat <- read.csv(fnam)[,-2] # Don't want the sample ID.
+
+## Top rows of table will have the per study stats:
+## For each stage (column) take the mean but only using samples that have reads.
+studyMeans <- aggregate(.~Study, dat, function (v) mean(v[v>0]))
+
+## Last three rows have mean, median, and sums taken across all samples:
+overall <- matrix(c(apply(dat[,-1], 2, function (v) mean(v[v>0])),
+                    apply(dat[,-1], 2, function (v) median(v[v>0])),
+                    colSums(dat[,-1])),
+                  nrow = 3, byrow=T,
+                  dimnames = list(c('mean','median','sum'), colnames(dat)[-1]))
+overall['sum','PctReadPairsRetained'] <- NA
+
+## Construct the final table
+dat <- rbind(studyMeans,
+             data.frame(Study = rownames(overall), overall))
+rownames(dat) <- NULL
+cat("\nWriting out table_4_for_manuscript.csv\n")
+write.csv(format(dat, digits=2), file='table_4_for_manuscript.csv', row.names=F, quote=F)
+rm(dat, overall, studyMeans)
+
+
+
 # # # # # # # # # # # #
 # Plot!
 #

@@ -2,7 +2,7 @@
     "input_path": "../GatherMetadata/metadata.cmap.csv",
     "output_path": "data/CMAP_metadata.csv.gz",
     ## MODIFY THIS TO BE YOUR API KEY 
-    ## "api_key": "*******YOU_API_KEY_HERE*******"
+    "api_key": "f2823290-831a-11ec-a96e-6968a44bdc83"
     ## Your API key can be obtained here:
     ## https://simonscmap.com/apikeymanagement
     ## Snakefile  will not work without a valid API key
