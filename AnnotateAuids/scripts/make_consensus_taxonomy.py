@@ -255,7 +255,7 @@ def make_consensus_id(
         if not df.empty or None:
             # Create pid flag
             df.loc[df["Genome879.pctId"] >= min_pid_genome879, "Genome879.pid_flag"] = 1
-            condition_pid_flag: int = df["Genome879.pid_flag"] == 1
+            condition_pid_flag: pd.Series[bool] = df["Genome879.pid_flag"] == 1
 
             # Initial new column for consensus ID
             df["consensus_id"] = "unknown"
@@ -304,7 +304,7 @@ def write_tsv(df: pd.DataFrame, output_path: str) -> bool:
     """
     if not df.empty or None:
         try:
-            df.to_csv(output_path, sep="\t", index=False)
+            df.to_csv(path_or_buf=output_path, sep="\t", index=False)
             print(f"Output file '{output_path}' written as tsv.")
             return True
         except Exception as e:
