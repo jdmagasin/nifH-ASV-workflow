@@ -71,7 +71,8 @@ MakeWantCols <- function()
                   LibrarySource = 'LibrarySource',
                   Size_fraction = 'Size_fraction',
                   FilterSize = 'FilterSize',
-                  Sample_Type = 'Sample[\\._]{0,1}Type')
+                  Sample_Type = 'Sample[\\._]{0,1}Type',
+                  Coastal_200km = 'coastal\\.200km')
       ## Anchor each pattern
       x <- names(wantCols)
       wantCols <- paste0('^',wantCols,'$')
