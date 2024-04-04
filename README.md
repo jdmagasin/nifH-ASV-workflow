@@ -1,7 +1,7 @@
 # Workflow for processing _nifH_ amplicon data sets
 
 This repository contains all post-pipeline software stages and data deliverables described in Morando, Magasin et al. 2024.  The workflow was used to process nearly all published _nifH_ amplicon MiSeq data sets that existed at the time of publication, as well as two new data sets produced by the [Zehr Lab](https://www.jzehrlab.com/) at [UC Santa Cruz](https://www.ucsc.edu/). The samples are shown in this map which links to an interactive Google map with study names, sample IDs, and collection information for each sample.
-[![Map of studies used in Morando, Magasin et al. 2024](images_for_readme/Morando_Magasin_et_al_2024_studies_used.png)](https://www.google.com/maps/d/embed?mid=1M8ZCYmVIuLwEC-o1Ux_6m--uxgBIu_Q&ehbc=2E312F)
+[![Map of studies used in Morando, Magasin et al. 2024](images_for_readme/Morando_Magasin_et_al_2024_studies_used.png)](https://www.google.com/maps/d/edit?mid=1i3IpZQwmywhLNK-DFnw_3gtrf9gY2u8&usp=sharing)
 
 
 ## Workflow overview
