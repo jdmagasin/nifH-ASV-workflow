@@ -1,6 +1,8 @@
 ## Primers used by cutadapt:  use defaults
 
 ## Parameters that impact DADA2 error models
+## Note: 20 was used. However, the trusted cut off encoded in PF00142, 25 bits, is
+## used first. Had we used 0 here rather than 20, the result would have been the same.
 NifH_minBits, 20
 
 ## Parameters forwarded to dada2::filterAndTrim()
