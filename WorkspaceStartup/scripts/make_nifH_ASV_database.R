@@ -90,6 +90,7 @@ cat("Note that", length(which(abundTab %>% select(-AUID) %>% colSums() == 0)),
     "samples have 0 total reads. They will be dropped after ASV annotations are checked.\n")
 
 
+
 cat("Loading sample metadata...")
 metaTab <- as_tibble(read.table(args["metaCsv"], stringsAsFactors = T, header = T, sep = ","))
 cat("done. ", nrow(metaTab), "samples X", ncol(metaTab) - 1, "metadata variables.\n")
@@ -220,6 +221,43 @@ filter_by_annotTab_auid <- function(df) {
 
   return(filt_df)
 }
+
+## Certain taxa still remain that are problematic and need to be removed
+## manually
+
+## Create a function to remove these from a dataframe
+remove_taxa_from_annoTab <- function(
+    anno_tab,
+    filter_text,
+    filter_column) {
+
+  # Make the key specific to taxa of interest
+  annotation_key <- annotTab %>%
+    filter(grepl(filter_text, {{filter_column}}, ignore.case = TRUE)) %>%
+    pull(AUID)
+
+  cat("Removing AUIDs annotated as '", filter_text, "'...\n", sep = "")
+  anno_tab_filt <- anno_tab %>%
+    filter(!AUID %in% annotation_key)
+
+  rows_removed <- nrow(anno_tab) - nrow(anno_tab_filt)
+  cat("Number of rows removed:", rows_removed, "\n")
+
+  return(anno_tab_filt)
+}
+
+## Synechococcus like nifh sequences are still present in annotation and need
+## to be removed
+
+## Make variable string to search with for taxa of interest
+filt_taxa <- "Synechococcus"
+
+## - remove these from the annotation table
+annotTab <- annotTab %>%
+  remove_taxa_from_annoTab(
+    filter_text = filter_text,
+    filter_column = "Genome879.id")
+
 
 # Filter abundance table and sequence file, removing unannotated ASVs
 abundTab <- filter_by_annotTab_auid(abundTab)
