@@ -255,7 +255,7 @@ filt_taxa <- "Synechococcus"
 ## - remove these from the annotation table
 annotTab <- annotTab %>%
   remove_taxa_from_annoTab(
-    filter_text = filter_text,
+    filter_text = filt_taxa,
     filter_column = Genome879.id)
 
 
