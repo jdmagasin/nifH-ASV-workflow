@@ -256,7 +256,7 @@ filt_taxa <- "Synechococcus"
 annotTab <- annotTab %>%
   remove_taxa_from_annoTab(
     filter_text = filter_text,
-    filter_column = "Genome879.id")
+    filter_column = Genome879.id)
 
 
 # Filter abundance table and sequence file, removing unannotated ASVs
