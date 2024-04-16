@@ -27,11 +27,13 @@ workspaceObjectDescriptions <- "
      metaTab      Metadata for samples in abundTab.
      cmapTab      Environmental data for samples in abundTab.
 
-  The workspace.RData includes the above as well as the following:
-     asvCyanos    Cyanobacteria ASVs based on best hit in Genome879.
-     asvNCDs      Non-cyanobacgteria ASVs based on best hit in Genome879.
-     GetTaxa()    Find ASVs with a specified taxonomic level (kingdom to genus) based on the ASV's
-                  best hit in Genome879.
+  The workspace.RData includes the above as well as 
+     GetTaxaGenome879()    Find ASVs with a specified taxonomic level (kingdom to genus) based on
+                           the ASV's best hit in the Genome 879 database.  For low levels or
+                           specific ASVs, also consider the quality of the Genome 879 hit which is
+                           provided in the annotTab fields Genome879.{pctId,alen,evalue}.  In the
+                           annotTab see also the primary_id column since that can draw from any of
+                           the resources used during AnnotateAuids.
 "
 
 
@@ -160,16 +162,14 @@ rm(idx.defs, idx.seqs)
 ## Define some helpful functions
 ##
 
-GetTaxa <- function(lev, taxa, invert = FALSE) {
+GetTaxaGenome879 <- function(lev, taxa, invert = FALSE) {
     ##
-    ## Return a character vector of ASVs that have taxonomic level 'lev' that is
-    ## equal to the specified 'taxa'.  Pass 'lev' an element in {k,p,c,o,f,g}.
-    ## For example to get all cyanobacterial and non-cyanobacterial diazotrophs:
-    ##    asvCyanos <- GetTaxa('p','Cyanobacteria')
-    ##    asvNCDs   <- GetTaxa('p','Cyanobacteria', invert=T)
-    ##
-    ## Taxomomic information is based on the ASV's best hit to Genome879, which
-    ## is recorded in the 'annotTab'.
+    ## Return a character vector of ASVs that have Genome 879 taxonomic level
+    ## 'lev' that is equal to the specified 'taxa'.  Pass 'lev' an element in
+    ## {k,p,c,o,f,g}.  For example to get all ASVs that are cyanobacterial and
+    ## non-cyanobacterial diazotrophs based on their best Genome 879 hits:
+    ##    asvCyanos.G879 <- GetTaxaGenome879('p','Cyanobacteria')
+    ##    asvNCDs.G879   <- GetTaxaGenome879('p','Cyanobacteria', invert=T)
     ##
     stopifnot(lev %in% c("k", "p", "c", "o", "f", "g"))
     g879Taxon <- paste0("Genome879.", lev)
@@ -185,14 +185,6 @@ GetTaxa <- function(lev, taxa, invert = FALSE) {
         as_vector() %>%
         as.character()
 }
-
-
-## ------------------------------------------------------------------------------
-##
-## Useful ASV lists
-##
-asvCyanos <- GetTaxa("p", "Cyanobacteria")
-asvNCDs <- GetTaxa("p", "Cyanobacteria", invert = T)
 
 
 ## ------------------------------------------------------------------------------
@@ -337,13 +329,10 @@ stopifnot(colnames(abundTab) == colnames(relabundTab)) # Samps 1:1 in abund tabl
 stopifnot(identical(asvSeqs$AUID, abundTab$AUID))      # ASVs 1:1 in abund tables and FASTA
 stopifnot(identical(asvSeqs$AUID, relabundTab$AUID))
 stopifnot(identical(asvSeqs$AUID, annotTab$AUID))
-stopifnot(asvCyanos %in% abundTab$AUID)
-stopifnot(asvNCDs %in% abundTab$AUID)
 
 save(asvSeqs, abundTab, relabundTab, annotTab,
     metaTab, cmapTab,
-    asvCyanos, asvNCDs,
-    GetTaxa,
+    GetTaxaGenome879,
     workspaceObjectDescriptions,
     file = "workspace.RData"
 )
