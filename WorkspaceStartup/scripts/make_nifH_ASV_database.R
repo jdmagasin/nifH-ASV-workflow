@@ -120,11 +120,11 @@ cat(
 
 cat("Loading annotation...")
 ## Load annotation for ASVs in the abundance table.  Drop ASVs with "unknown"
-## consensus_id unless they have cysteines that might coordinate the 4Fe-4S and
+## primary_id unless they have cysteines that might coordinate the 4Fe-4S and
 ## the AMP (often in FAMPIRE) in the Switch II region.  Split the Genome879 taxa
 ## string.  Sort by AUID number (consistent with filter_by_annotTab_auid()).
 annotTab <- read_tsv(args["annotTsv"], col_types = cols()) %>%
-    filter((consensus_id != "unknown") | (hasCCAMP.len > 0)) %>%
+    filter((primary_id != "unknown") | (hasCCAMP.len > 0)) %>%
     separate(
       col = Genome879.tax,
       sep = ";", paste0("Genome879.", c("k", "p", "c", "o", "f", "g"))
