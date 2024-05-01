@@ -19,9 +19,9 @@
 ## This Makefile runs each of the DADA2 nifH pipeline annotation tools and then
 ## performs additional searches for the ASVs within the cyano / NCD DB and the
 ## UCYN-A oligos DB.  Annotations are then stitched together into a single table
-## using scripts/makeAnnotationTable.R.  Then a consensus taxon is assigned to
+## using scripts/makeAnnotationTable.R. Then a primary taxon ID is assigned to
 ## each ASVs based on considering the accumulated annotations for each ASV, by
-## scripts/make_consensus_taxonomy.py, to create the final annotation table,
+## scripts/make_primary_taxon_id.py, to create the final annotation table,
 ## auids.annot.tsv.
 ##
 ## Usage:
@@ -43,10 +43,10 @@ SHELL=/usr/bin/bash
 ## Input: The fasta from FilterAuids
 AUID_FASTA=$(shell realpath ../FilterAuids/auid.filtered.fasta)
 
-## Output (main):  Table with all annotation, including the consensus taxon
+## Output (main):  Table with all annotation, including the primary taxon ID
 ANNOT_TAB=auids.annot.tsv
 
-## Annotation table before adding the consensus taxon
+## Annotation table before adding the primary taxon ID
 ANNOT_TAB_RAW=auids.annot.raw.tsv
 
 
@@ -267,9 +267,9 @@ $(CCAMP_OUTS) &: $(AUID_FASTA) $(NIFHCLUST_ORFS)
 	@echo
 
 
-## Final annotation table with consensus taxon
+## Final annotation table with primary taxon ID
 $(ANNOT_TAB): $(ANNOT_TAB_RAW)
-	@echo ">>>>> Creating final annotation table $(ANNOT_TAB) which includes consensus taxon <<<<<"
-	@python scripts/make_consensus_taxonomy.py $(ANNOT_TAB_RAW) $(ANNOT_TAB)
+	@echo ">>>>> Creating final annotation table $(ANNOT_TAB) which includes primary taxon ID <<<<<"
+	@python scripts/make_primary_taxon_id.py $(ANNOT_TAB_RAW) $(ANNOT_TAB)
 	@echo ">>>>> Finished creating $(ANNOT_TAB) <<<<<"
 	@echo

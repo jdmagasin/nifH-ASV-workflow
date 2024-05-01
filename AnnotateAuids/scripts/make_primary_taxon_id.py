@@ -1,14 +1,14 @@
 """
-make_consensus_taxonomy.py
+make_primary_taxon_id.py
 
 This script is part of the AnnotateAuids stage of the nifH ASV workflow. It is managed by a Makefile and depends on the merged annotation table (auids.annot.tsv) created by this stage. 
 
 Overview:
     - reads an input annotation table tsv file
     - cleans up columns in the DataFrame
-    - creates a consensus taxonomy ID -> consensus_id
-    - writes the updated annotation table with new column consensus_id added
-A new column "consensus_id" is added to the input table (auids.annot.tsv), representing the most informative taxonomic ID aggregated across the merged annotation table supplied and new thresholds passed to this script. This ID should be used in any discussion of the AUID. Each AUID is assigned a new ID hierarchically. Oligotypes for UCYN-A are always used when available. NCD/cyano ID are consider next followed by Genome879 tax ID that pass new threshold supplied to the script (default is 97.0%). If none of these specific ID are available, the more general nifH cluster is used. 
+    - creates a primary taxonomy ID -> primary_id
+    - writes the updated annotation table with new column primary_id added
+A new column "primary_id" is added to the input table (auids.annot.tsv), representing the most informative taxonomic ID aggregated across the merged annotation table supplied and new thresholds passed to this script. This ID should be used in any discussion of the AUID. Each AUID is assigned a new ID hierarchically. Oligotypes for UCYN-A are always used when available. NCD/cyano ID are consider next followed by Genome879 tax ID that pass new threshold supplied to the script (default is 97.0%). If none of these specific ID are available, the more general nifH cluster is used. 
 
 A main function executes and manages the entire process of the script. Below is a breakdown of its functionality:
 
@@ -22,23 +22,23 @@ A main function executes and manages the entire process of the script. Below is 
 
     3. Clean Columns:
         - Invokes the 'clean_columns()' function to perform necessary cleanup operations on the DataFrame.
-        - Ensures that the DataFrame is properly formatted and ready for consensus ID generation.
+        - Ensures that the DataFrame is properly formatted and ready for primary ID generation.
 
     4. Generate Consensus IDs:
-        - Utilizes the 'make_consensus_id()' function to create consensus taxonomy IDs based on specified criteria.
+        - Utilizes the 'make_primary_id()' function to create primary taxonomy IDs based on specified criteria.
         - Consensus IDs are assigned hierarchically, considering various taxonomic IDs and thresholds.
 
     5. Write Output Data:
-        - Calls the 'write_tsv()' function to write the updated DataFrame with consensus IDs to a TSV file.
+        - Calls the 'write_tsv()' function to write the updated DataFrame with primary IDs to a TSV file.
         - Provides feedback to the user upon successful completion or error during file writing.
 
 Usage:
-    python make_consensus_taxonomy.py <path_to_input_table> <path_to_output_table> [--min_pid_genome879 <threshold_pid>] [-h,--help]
+    python make_primary_taxon_id.py <path_to_input_table> <path_to_output_table> [--min_pid_genome879 <threshold_pid>] [-h,--help]
 
 Arguments:
     annotation_table: Path to the input annotation table.
-    output_table: Path to the output annotation table with consensus ID added.
-    --min_pid_genome879: Minimum threshold percentage identity to consider Genome879.id in consensus ID. If not provided, default value is 97.0.
+    output_table: Path to the output annotation table with primary ID added.
+    --min_pid_genome879: Minimum threshold percentage identity to consider Genome879.id in primary ID. If not provided, default value is 97.0.
 
 Dependencies:
 - pandas
@@ -78,9 +78,9 @@ def setup_argparse() -> argparse.ArgumentParser:
 Overview of {script_name}:
     - reads an input annotation table tsv file
     - cleans up columns in the DataFrame
-    - creates a consensus taxonomy ID -> consensus_id
-    - writes the updated annotation table with new column consensus_id added
-A new column "consensus_id" is added to the input table (auids.annot.tsv), representing the most informative taxonomic ID aggregated across the merged annotation table supplied and new thresholds passed to this script. This ID should be used in any discussion of the AUID. Each AUID is assigned a new ID hierarchically. Oligotypes for UCYN-A are always used when available. NCD/cyano ID are consider next followed by Genome879 tax ID that pass new threshold supplied to the script (default is 97.0%). If none of these specific ID are available, the more general nifH cluster is used. 
+    - creates a primary taxonomy ID -> primary_id
+    - writes the updated annotation table with new column primary_id added
+A new column "primary_id" is added to the input table (auids.annot.tsv), representing the most informative taxonomic ID aggregated across the merged annotation table supplied and new thresholds passed to this script. This ID should be used in any discussion of the AUID. Each AUID is assigned a new ID hierarchically. Oligotypes for UCYN-A are always used when available. NCD/cyano ID are consider next followed by Genome879 tax ID that pass new threshold supplied to the script (default is 97.0%). If none of these specific ID are available, the more general nifH cluster is used. 
 
 	A main function executes and manages the entire process of the script. Below is a breakdown of its functionality:
 
@@ -94,14 +94,14 @@ A new column "consensus_id" is added to the input table (auids.annot.tsv), repre
 
 	3. Clean Columns:
 	- Invokes the 'clean_columns()' function to perform necessary cleanup operations on the DataFrame.
-	- Ensures that the DataFrame is properly formatted and ready for consensus ID generation.
+	- Ensures that the DataFrame is properly formatted and ready for primary ID generation.
 
 	4. Generate Consensus IDs:
-	- Utilizes the 'make_consensus_id()' function to create consensus taxonomy IDs based on specified criteria.
+	- Utilizes the 'make_primary_id()' function to create primary taxonomy IDs based on specified criteria.
 	- Consensus IDs are assigned hierarchically, considering various taxonomic IDs and thresholds.
 
 	5. Write Output Data:
-	- Calls the 'write_tsv()' function to write the updated DataFrame with consensus IDs to a TSV file.
+	- Calls the 'write_tsv()' function to write the updated DataFrame with primary IDs to a TSV file.
 	- Provides feedback to the user upon successful completion or error during file writing.
 
 """,
@@ -114,13 +114,13 @@ A new column "consensus_id" is added to the input table (auids.annot.tsv), repre
     )
     parser.add_argument(
         "output_table",
-        help="Path to output annotation table with consensus ID added",
+        help="Path to output annotation table with primary ID added",
     )
     parser.add_argument(
         "--min_pid_genome879",
         type=float,
         default=97.0,
-        help="Minimum threshold pid to consider Genome879.id in consensus ID",
+        help="Minimum threshold pid to consider Genome879.id in primary ID",
     )
 
     return parser
@@ -161,7 +161,7 @@ def read_tsv(annotation_table: str) -> pd.DataFrame:
 
 def clean_columns(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Clean up columns in the DataFrame to work with consensus ID function.
+    Clean up columns in the DataFrame to work with primary ID function.
 
     Args:
         df (pd.DataFrame): DataFrame containing the input data.
@@ -236,32 +236,32 @@ def clean_columns(df: pd.DataFrame) -> pd.DataFrame:
         sys.exit(1)
 
 
-def make_consensus_id(
+def make_primary_id(
     df: pd.DataFrame,
     min_pid_genome879: float = 97.0,
 ) -> pd.DataFrame:
     """
-    Create the consensus ID in the DataFrame.
+    Create the primary ID in the DataFrame.
 
     Args:
         df (pd.DataFrame): DataFrame containing the input data.
-        min_pid_genome879 (float): Minimum threshold percentage identity to consider Genome879.id in consensus ID.
+        min_pid_genome879 (float): Minimum threshold percentage identity to consider Genome879.id in primary ID.
 
     Returns:
-        pd.DataFrame: The DataFrame with the consensus ID added.
+        pd.DataFrame: The DataFrame with the primary ID added.
     """
     try:
-        print("Creating consensus ID...")
+        print("Creating primary ID...")
         if not df.empty or None:
             # Create pid flag
             df.loc[df["Genome879.pctId"] >= min_pid_genome879, "Genome879.pid_flag"] = 1
             condition_pid_flag: pd.Series[bool] = df["Genome879.pid_flag"] == 1
 
-            # Initial new column for consensus ID
-            df["consensus_id"] = "unknown"
+            # Initial new column for primary ID
+            df["primary_id"] = "unknown"
 
-            # Assign consensus ID
-            df["consensus_id"] = (
+            # Assign primary ID
+            df["primary_id"] = (
                 df["UCYNAoligos.id"]
                 .fillna(df["MarineDiazo.id"])
                 .fillna(df["Genome879.tax"].where(condition_pid_flag))
@@ -288,13 +288,13 @@ def make_consensus_id(
         else:
             sys.exit(1)
     except Exception as e:
-        print(f"Error creating consensus ID: {e}")
+        print(f"Error creating primary ID: {e}")
         sys.exit(1)
 
 
 def write_tsv(df: pd.DataFrame, output_path: str) -> bool:
     """
-    Write the DataFrame with newly added consensus ID column to a TSV file.
+    Write the DataFrame with newly added primary ID column to a TSV file.
 
     Args:
         df (pd.DataFrame): DataFrame to be written to the file.
@@ -317,12 +317,12 @@ def main():
     """
     Main function to execute the script.
 
-    This function serves as the entry point for the script execution. It orchestrates the entire process of reading input data, processing it, generating consensus taxonomy IDs, and writing the updated output data. Below is a breakdown of its functionality:
+    This function serves as the entry point for the script execution. It orchestrates the entire process of reading input data, processing it, generating primary taxonomy IDs, and writing the updated output data. Below is a breakdown of its functionality:
 
     1. setup_argparse(): Set up argparse for command-line argument parsing.
     2. read_tsv(input_table: str) -> pd.DataFrame: Read the input file (merged annotation table) as a tsv and return a pandas DataFrame.
-    3. clean_columns(df: pd.DataFrame) -> pd.DataFrame: Clean up columns in the DataFrame to work with consensus ID function.
-    4. make_consensus_id(df: pd.DataFrame, min_pid_genome879: float) -> pd.DataFrame: Create the consensus ID in the DataFrame.
+    3. clean_columns(df: pd.DataFrame) -> pd.DataFrame: Clean up columns in the DataFrame to work with primary ID function.
+    4. make_primary_id(df: pd.DataFrame, min_pid_genome879: float) -> pd.DataFrame: Create the primary ID in the DataFrame.
     5. write_tsv(df: pd.DataFrame, output_path: str) -> None: Write the DataFrame to a TSV file.
 
     Returns:
@@ -362,7 +362,7 @@ def main():
         df: pd.DataFrame = read_tsv(annotation_table=args.annotation_table)
         if df is not df.empty:
             df = clean_columns(df=df)
-            df = make_consensus_id(
+            df = make_primary_id(
                 df=df,
                 min_pid_genome879=args.min_pid_genome879,
             )
@@ -380,7 +380,7 @@ def main():
         else:
             print(
                 f"""\nScript '{script_name}' exited with an error.
-No consensus ID was made and no output was written! :(
+No primary ID was made and no output was written! :(
 """
             )
 
