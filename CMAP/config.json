@@ -4,6 +4,6 @@
     ## MODIFY THIS TO BE YOUR API KEY and remove leading '## '
     ## "api_key": "*******YOUR_API_KEY_HERE*******"
     ## Your API key can be obtained here:
-    ## https://simonscmap.com/apikeymanagement
+    ## https: //simonscmap.com/apikeymanagement
     ## Snakefile  will not work without a valid API key
 }

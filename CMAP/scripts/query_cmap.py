@@ -1,10 +1,11 @@
+#!/usr/bin/env python3
 """
-Script Name: cmap_colocalization.py 
+query_cmap.py 
 
-Script purpose: CMAP data colocalization
+This module queries the CMAP data repository to colocalize environmental metadata with user provided sample location metadata.
 
-Description:
-This script colocalizes sample collection data with the Simon's CMAP (Collaboration on Ocean Processes and Ecology) repository to retrieve environmental data of interest to be used in analysis. Input collection data, as a CSV, is supplied along with targets and parameters which are used to query the CMAP catalog, returning a colocalized dataset as a compressed CSV file. 
+Overview:
+This script colocalizes sample collection metadata with the Simon's Collaborative Marine Atlas Project (CMAP) repository to retrieve environmental data of interest to enhance downstream analysis. Input collection data, as a CSV, is supplied along with targets and parameters which are used to query the CMAP catalog, returning a colocalized dataset as a compressed CSV file. 
 
 Collection data **MUST** be supplied as a CSV that is formatted specifically for the CMAP query to execute properly. The required columns headers and their expected data types for the sample collection data:
       "header":   data type
@@ -12,18 +13,22 @@ Collection data **MUST** be supplied as a CSV that is formatted specifically for
       - "lon":    float
       - "time":   str
       - "depth":  float
-The script will attempt to convert values to the proper data type prior to querying CMAP. If this conversation fails, the entire row (sample) is removed. Please make sure your data if formatted properly prior to running this script. All other column headers can be any value and in any format as the script ignores them. These column can be used for other relevant metadata, e.g.,  sample IDs.
+To avoid data typing issues, the script will first attempt to convert values to the proper data type prior to attempting to colocalize the data. If this conversation fails, the entire row (sample) is removed. Please make sure your data if formatted properly prior to running this script. The script ignores all other column headers so these restrictions do not apply to them. These column can be used for other relevant metadata, e.g., sample IDs.
 
 The targets and their parameters have been set and reflect those used to generate the nifH ASV database CMAP data file. However, the tables, targets, and parameters can all be adjusted based at the users discretion by editing the targets dictionary in the setup_colocalization() function below. See the CMAP webpage and catalog for more information. https://simonscmap.com
 
-A ***valid API key is required** to query the CMAP repository. The script will fail if a valid API key is not passed. Your API key can be obtained here (https://simonscmap.com/apikeymanagement). If using this script directly, see Usage below. If the accompanied Snakefile is used to manage the this script within the CMAP stage of the nifH workflow, your API key needs to be added to the associated config file. 
+A ***valid API key is required** to query the CMAP repository. The script will fail if a valid API key is not passed. Your API key can be obtained here (https://simonscmap.com/apikeymanagement). If the accompanied Snakefile is used to manage the this script within the CMAP stage of the nifH workflow, your API key needs to be added to the associated config file. If using this script directly, see Usage below. 
+
+#_# Specific to the nifH-ASV-workflow #_#
+The CMAP stage is part of the nifH-ASV-workflow, a customizable bioinformatic workflow that compiles multiple datasets and produces high quality ASVs  through a series of comprehensive stages. The CMAP stage is managed by a Snakefile that creates, activates, and deactivates a separate, self-contained conda environment upon the completion of the stage, having no effect on the conda environments required for the DADA2 and post-pipeline workflows. The main output from the GatherMetadata stage, metadata.cmap.csv, a table of the collection coordinates, dates at local noon, and depths from all the samples, is passed to this script (query_cmap.py) to query the CMAP data portal for co-localized environmental data.  
+#_# Specific to the nifH-ASV-workflow #_#
 
 Usage:
-python cmap_colocalization.py <input_path> <output_path> <your_cmap_api_key> -h,--help
+python3 query_cmap.py <input_path> <output_path> <your_cmap_api_key> -h,--help
 
 Arguments:
     input: Path to the input dataset CSV file.
-    output: Path to save the colocalized dataset CSV file.
+    output: Path to save the compressed colocalized dataset CSV file.
     cmap_api_key: **Your CMAP API key. Get it at https://simonscmap.com/apikeymanagement.**
     -h, --help: Show this help message and exit
 """
@@ -38,6 +43,14 @@ import pycmap
 import pandas as pd
 from argparse import RawTextHelpFormatter
 
+
+__author__ = "Michael (Mo) Morando"
+__copyright__ = "Copyright 2023"
+__maintainer__ = "Michael (Mo) Morando"
+__email__ = "mikemo@gmail.com"
+__status__ = "Stable"
+
+
 # Get the full path to the currently running script
 script_path: str = __file__
 
@@ -49,7 +62,7 @@ print(f"{script_name} is currently running...")
 
 
 # _# Script starts #_#
-def read_input_file(input_path: str) -> pd.DataFrame:
+def read_input_file(input_path: str) -> pd.DataFrame | None:
     """
     Read the input dataset from a CSV file and return it as a DataFrame.
 
@@ -66,7 +79,7 @@ def read_input_file(input_path: str) -> pd.DataFrame:
         )
         # -# check if pd.DataFrame is 'empty'
         #!# however, it appears that if file is completely empty, pd.read_csv()
-        #!# does not read it in so it is not caught if this if statement but
+        #!# does not read it in so it is not caught by this if statement but
         #!# instead dealt with separately
         if not df.empty:
             required_headers: list[str] = ["lat", "lon", "time", "depth"]
@@ -127,17 +140,19 @@ def read_input_file(input_path: str) -> pd.DataFrame:
                 # variable
                 else:
                     rows_removed_count += 1
-            # Print to indicate how many rows were removed        
+            # Print to indicate how many rows were removed
             print(
-                    f"Total number of rows REMOVED that could not be converted: {rows_removed_count}"
-                )
+                f"Total number of rows REMOVED that could not be converted: {rows_removed_count}"
+            )
             # Create a new DataFrame containing only the valid rows
             # the index needs to be reset or downstream concatenation fail
             # If the conversion process removes all the rows leaving the df empty, we can check for that here:
-            if not len(valid_rows)<=1:
+            if not len(valid_rows) <= 1:
                 df = pd.DataFrame(data=valid_rows).reset_index(drop=True)
             else:
-                print(f"\nError: The input data file '{input_path}' values are not the expected types. The data type conversion checking process removed all rows from the DataFrame. Please see in above in log to determine which rows and values need to be adjusted!")
+                print(
+                    f"\nError: The input data file '{input_path}' values are not the expected types. The data type conversion checking process removed all rows from the DataFrame. Please see in above in log to determine which rows and values need to be adjusted!"
+                )
                 print("Contents of converted input file:")
                 print(valid_rows)
                 sys.exit(10)
@@ -161,7 +176,34 @@ def read_input_file(input_path: str) -> pd.DataFrame:
         print(f"Error: {e}")
         sys.exit(1)
     except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+
+def contains_letters_and_numbers(s: str) -> bool:
+    """
+    Check if a string contains both letters and numbers.
+
+    Args:
+        s (str): Input string to check.
+
+    Returns:
+        bool: True if the string contains both letters and numbers, False otherwise.
+    """
+    try:
+        if not s:
+            raise ValueError("Input string cannot be empty")
+
+        return any(char.isalpha() for char in s) and any(char.isdigit() for char in s)
+
+    except TypeError as e:
         print(f"Error: {e}")
+        return False
+    except ValueError as e:
+        print(f"Error: {e}")
+        return False
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return False
 
 
 def setup_colocalization(cmap_api_key: str) -> dict:
@@ -174,6 +216,16 @@ def setup_colocalization(cmap_api_key: str) -> dict:
     Returns:
         dict: Dictionary specifying the targets, tables, variables, and tolerances.
     """
+
+    # Check if cmap_api_key contains both alphanumeric characters to help
+    # validate it is an actual API key
+    # Passing a single number or letter does not trip pycmap's error handling
+    # for invalid API keys so this helps with that
+    if not contains_letters_and_numbers(cmap_api_key):
+        raise ValueError(
+            "cmap_api_key must contain both alphabetic and numeric characters"
+        )
+
     # Set the CMAP API key
     pycmap.API(token=cmap_api_key)
 
@@ -215,9 +267,9 @@ def setup_colocalization(cmap_api_key: str) -> dict:
         },
         # "tblWind_NRT_hourly": {
         #     "variables": [
-        #         # wind_speed", # no longer available
-        #         # "wind_curl",  # FIXME: Exists in CMAP docs of Feb 2021 but causes KeyError crash
-        #         "stress_curl",
+        #         # wind_speed", #! no longer available in catalog
+        #         # "wind_curl",  #! FIXME: Exists in CMAP docs of Feb 2021 but causes KeyError crash
+        #         "stress_curl", #! Exists in CMAP docs of Feb 2021 but causes KeyError crash
         #     ],
         #     "tolerances": [1, 0.25, 0.25, 1],
         # },
@@ -273,11 +325,6 @@ def setup_colocalization(cmap_api_key: str) -> dict:
             "variables": ["NO3", "PO4", "Fe", "O2", "Si", "PP", "PHYC", "CHL"],
             "tolerances": [4, 0.5, 0.5, 5],
         },
-        # 	"tblArgoMerge_REP": {
-        #                                  "variables": ["argo_merge_salinity_adj", "argo_merge_temperature_adj", "argo_merge_O2_adj", "argo_merge_turbidity_adj", "argo_merge_chl_adj", "argo_merge_cdom_adj", "argo_merge_NO3", "argo_merge_NO3_adj",
-        # 		"argo_merge_ph_adj"],
-        #                                  "tolerances": [1, 1, 1, 5]
-        #                                  },
         "tblArgo_MLD_Climatology": {
             "variables": [
                 "mls_da_argo_clim",
@@ -297,10 +344,6 @@ def setup_colocalization(cmap_api_key: str) -> dict:
             "variables": ["sst"],
             "tolerances": [1, 0.25, 0.25, 1],
         },
-        # 	"tblMercator_MLD_NRT": {
-        #                                  "variables": ["mld_nrt"],
-        #                                  "tolerances": [1, 1, 1, 5]
-        #                                  },
         "tblWOA_2018_MLD_qrtdeg_Climatology": {
             "variables": ["M_an_clim", "M_mn_clim"],
             "tolerances": [1, 0.5, 0.5, 5],
@@ -367,7 +410,7 @@ def setup_colocalization(cmap_api_key: str) -> dict:
 
 def colocalize_data(input_data: pd.DataFrame, targets: dict) -> pd.DataFrame:
     """
-    Colocalize input data with CMAP reposity. 
+    Colocalize input data with CMAP repository.
     Required Columns: [lat, lon, time, depth]
 
     Args:
@@ -431,8 +474,9 @@ def main() -> None:
 
     # Create an ArgumentParser object to handle command-line arguments
     parser = argparse.ArgumentParser(
-      description=(f"""
-{script_name} colocalizes sample collection data with the Simon's CMAP (Collaboration on Ocean Processes and Ecology) repository to retrieve environmental data of interest to be used in analysis. Input collection data, as a CSV, is supplied along with targets and parameters which are used to query the CMAP catalog, returning a colocalized dataset as a compressed CSV file.     
+        description=(
+            f"""
+{script_name} colocalizes sample collection data with the Simon's Collaborative Marine Atlas Project (CMAP) repository to retrieve environmental data of interest to be used in analysis. Input collection data, as a CSV, is supplied along with targets and parameters which are used to query the CMAP catalog, returning a colocalized dataset as a compressed CSV file.     
       
 Collection data **MUST** be supplied as a CSV that is formatted specifically for the CMAP query to execute properly. The required columns headers and their expected data types for the sample collection data:
       "header":   data type
@@ -446,9 +490,10 @@ The targets and their parameters have been set and reflect those used to generat
       
 A ***valid API key is required** to query the CMAP repository. The script will fail if a valid API key is not passed. Your API key can be obtained here (https://simonscmap.com/apikeymanagement). If using this script directly, see Usage below. If the accompanied Snakefile is used to manage the this script within the CMAP stage of the nifH workflow, your API key needs to be added to the associated config file. 
 
-"""),
-    formatter_class=RawTextHelpFormatter,
-    usage=f"{script_name} [-h,--help] <input_path> <output_path> <your_cmap_api_key>",
+"""
+        ),
+        formatter_class=RawTextHelpFormatter,
+        usage=f"{script_name} [-h,--help] <input_path> <output_path> <your_cmap_api_key>",
     )
     # Add arguments for input, output, and CMAP API key
     parser.add_argument(
@@ -496,7 +541,7 @@ A ***valid API key is required** to query the CMAP repository. The script will f
         print("Failed to parse command-line arguments.")
         sys.exit(5)
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"An unexpected error occurred: {e}")
         print(f"Failed to execute script: '{script_name}'.")
 
     # Pass success flag
@@ -544,7 +589,7 @@ If error states "'None' is missing", an argument was not pass. Please see usage 
 """
         )
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"An unexpected error occurred: {e}")
         print("Failed to colocalize data and save the dataset.")
     finally:
         # success block with print statements

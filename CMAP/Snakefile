@@ -1,48 +1,48 @@
-## Copyright (C) 2023 Mo Morando
-##
+## Copyright (C) 2023 Michael (Mo) Morando ##
 
-#_#  Snakefile file to mange the CMAP stage of the nifH ASV workflow ##
-#_#  Configfile is used to supply parameters to Snakefile ##
+# _#  Snakefile file to mange the CMAP stage of the nifH ASV workflow ##
+# _#  Configfile is used to supply parameters to Snakefile ##
 
 ##  CMAP Data Colocalization ##
 ##  Description:
-##      Colocalizes input data with CMAP (Simons Collaboration on Ocean 
-##      Processes and Ecology) data repository to retrieve environmental data 
-##      of interest to be used in analysis. The output is a compress csv file 
+##      Colocalizes input data with the Simon's Collaborative Marine Atlas
+##      Project (CMAP) data repository to retrieve environmental data
+##      of interest to be used in analysis. The output is a compress csv file
 ##      of the colocalized dataset.
 ##
 ##  Calls script: query_cmap.py
-##      Takes CSV of the nifH amplicon sample collection data (lat, lon, 
-##      time, and depth) as input, colocalizes this with specified targets in 
-##      the CMAP catalog, producing a compressed CSV file with environment data 
-##      of interest.
-## 
+##      Takes CSV of the nifH amplicon sample collection data from the
+##      GatherMetadata stage (metadata.cmap.csv containing lat, lon, time, and
+##      depth) as input, colocalizes this with specified targets in the CMAP
+##      catalog, producing a compressed CSV file with environment data of
+##      interest.
+##
 ##  Parameters are passed via a config file
 ##!  ############ MODIFICATION OF THIS FILE (config.json) #############
 ##!  ########################## IS REQUIRE ###########################
 ##!  Configfile: config.json
-##!     MODIFY "api_key": "*******YOU_API_KEY_HERE*******" TO BE YOUR API KEY 
+##!     MODIFY "api_key": "*******YOU_API_KEY_HERE*******" TO BE YOUR API KEY
 ##!     as described at: https://simonscmap.com/apikeymanagement
-##      
-##  After the addition of your API key to the config file, the workflow can be 
+##
+##  After the addition of your API key to the config file, the workflow can be
 ##  run as shown below in Usage.
 ##
 ##  Conda environment:
-##      A conda environment is created that encasulates all the necessary 
-##      libraries/packages and tools required to run the query_cmap.py script. 
-##      Running the snakefile will make this conda environment using file: 
+##      A conda environment is created that encasulates all the necessary
+##      libraries/packages and tools required to run the query_cmap.py script.
+##      Running the snakefile will make this conda environment using file:
 ##      CMAP/environments/CMAP_enviroments.yaml
 ##
-##  A more detailed explaination of the script 'query_cmap.py' and all that it ##  does can be found in the documentation within the script itself. Most of 
+##  A more detailed explaination of the script 'query_cmap.py' and all that it ##  does can be found in the documentation within the script itself. Most of
 ##  these detials can also be accessed by running the script with itself with ##  the help argument:
 ##  query_cmap.py --help
 ##
 ##
 ##  Usage:
-##    snakemake -c1 --use-conda         # Default. Retrieve CMAP data if 
+##    snakemake -c1 --use-conda         # Default. Retrieve CMAP data if
 ##                                        metadata.cmap.tsv changed.
 ##    snakemake -c1 clean               # Remove CMAP_metadata.csv.gz
-##    snakemake -c1 superclean          # Remove CMAP_metadata.csv.gz, log 
+##    snakemake -c1 superclean          # Remove CMAP_metadata.csv.gz, log
 ##                                        directory, and CMAP conda environment
 ##
 ##
@@ -59,6 +59,7 @@ import datetime
 # Function to generate a timestamp
 def get_timestamp():
     return datetime.datetime.now().strftime("%Y%m%d")
+
 
 # Rule to query CMAP
 rule query_CMAP:
@@ -79,6 +80,7 @@ rule query_CMAP:
         """
         python3 scripts/query_cmap.py {input} {output} {params.api_key} > {log} 2>&1
         """
+
 
 # Cleaning rules
 rule clean:
