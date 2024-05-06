@@ -48,13 +48,23 @@
 ##
 
 
-# Load parameters from JSON config
-configfile: "config.json"
-
-
 # Import the datetime module
 import datetime
 
+# Load parameters from JSON config
+#! A nasty error is thrown if you do not add your API key to the JSON config
+#! file and this helps make that easier to understand
+try:
+    configfile: "config.json"
+    api_key = config.get("api_key")
+    if not api_key:
+        raise KeyError("Your API key is missing in the config file.")
+except FileNotFoundError:
+    print("Error: Config file 'config.json' not found!")
+    exit(1)
+except KeyError as e:
+    print(f"Error: {e}")
+    exit(1)
 
 # Function to generate a timestamp
 def get_timestamp():
@@ -68,7 +78,7 @@ rule query_CMAP:
     output:
         config["output_path"],
     params:
-        api_key=config["api_key"],
+        api_key=api_key,
     log:
         expand(
             "logs/query_cmap_{timestamp}.log",
