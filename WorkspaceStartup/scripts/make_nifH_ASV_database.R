@@ -124,13 +124,22 @@ cat("Loading annotation...")
 ## the AMP (often in FAMPIRE) in the Switch II region.  Split the Genome879 taxa
 ## string.  Sort by AUID number (consistent with filter_by_annotTab_auid()).
 annotTab <- read_tsv(args["annotTsv"], col_types = cols()) %>%
-    filter((primary_id != "unknown") | (hasCCAMP.len > 0)) %>%
+    filter((!primary_id %in% c("unknown", "unknownERROR")) | (hasCCAMP.len > 0)) %>%
     separate(
       col = Genome879.tax,
       sep = ";", paste0("Genome879.", c("k", "p", "c", "o", "f", "g"))
   ) %>%
   arrange(as.numeric(str_extract(AUID,"\\d+$")))
 cat("done.\n")
+
+## AnnotateAuids checks for AUIDs with multiple rows, but good to check again.
+annotCount <- table(annotTab$AUID)
+if (any(annotCount) > 1) {
+    cat("The following AUIDs have multiple rows in the annotation table:\n")
+    print(annotCount[annotCount > 1])
+    stop("Aborting. Please check the log from AnnotateAuids and contact the authors for help.")
+}
+rm(annotCount)
 
 
 ## Very simple FASTA reader which assumes valid FASTA created by FilterAuids
