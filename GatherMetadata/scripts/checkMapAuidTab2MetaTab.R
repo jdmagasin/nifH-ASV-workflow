@@ -27,7 +27,7 @@ mSampIds <- read.table('metadata.csv', sep=',', header=T)$SAMPLEID
 stopifnot(!(table(mSampIds) > 1))
 mSampIds <- unique(sub('_transcriptomic$', '', mSampIds))  # Use original sample ID for metaT's
 
-aSampIds <- colnames(read.table('../FilterAuids/auid.abundances.filtered.tsv.gz', nrows=3))
+aSampIds <- colnames(read.table('../FilterAuids/auid.abundances.filtered.tsv.gz', nrows=3, check.names=F))
 stopifnot(table(aSampIds) == 1)  # uniqueness check
 x <- table( sub('^.+___(.+)$','\\1', aSampIds) )
 if (any(x > 1)) {

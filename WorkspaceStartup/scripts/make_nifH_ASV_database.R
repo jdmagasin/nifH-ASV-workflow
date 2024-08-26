@@ -81,7 +81,7 @@ cat("done.\n")
 ## to a tibble (assuming we prefer tibbles).
 
 cat("Loading the abundance table...")
-abundTab <- read.table(args["abundTabTsv"], stringsAsFactors = T, header = T, row.names = 1)
+abundTab <- read.table(args["abundTabTsv"], stringsAsFactors = T, header = T, row.names = 1, check.names = F)
 abundTab$AUID <- rownames(abundTab)
 ## Rename columns to use just the sample ID and make AUID column 1
 abundTab <- as_tibble(abundTab) %>%
