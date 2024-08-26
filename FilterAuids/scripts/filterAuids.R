@@ -109,7 +109,7 @@ cat("done.\n")
 
 cat("Loading AUID abundance table...")
 stopifnot(file.exists(auidAbundTabName))
-atab <- read.table(auidAbundTabName)
+atab <- read.table(auidAbundTabName, check.names=F) # do not check/fix sample names
 cat("done!  Table is",dim2desc(dim(atab)),"\n")
 RecordSampleReadsAfterFilterStep('Initial', atab)
 

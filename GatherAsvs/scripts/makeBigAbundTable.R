@@ -22,7 +22,7 @@ tags <- sub('^counts\\.(.+)\\.tsv','\\1', basename(abundFiles))
 abundTabs <- lapply(1:length(abundFiles),
                     function(i) {
                         ## Get counts, and prefix samples with the tag.
-                        m <- as.matrix(read.table(abundFiles[i], sep="\t"))
+                        m <- as.matrix(read.table(abundFiles[i], sep="\t", check.names=F))
                         colnames(m) <- paste0(tags[i],"___",colnames(m))  # see hack note below
                         m
                     })

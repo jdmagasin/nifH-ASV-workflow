@@ -222,7 +222,7 @@ stopifnot(setequal(df$AUID, c(
 )))
 
 
-# _#FIXME:#############
+###############
 ##
 ## UCYN-A oligos
 ##
@@ -245,7 +245,7 @@ stopifnot(setequal(df$AUID, c(
 )))
 
 
-# _#FIXME:#################
+###################
 ##
 ## And now add CART annotation.
 ##
@@ -255,7 +255,17 @@ stopifnot(setequal(df$AUID, c(
     bestHits$MarineDiazo$AUID, bestHits$UCYNAoligos$AUID,
     annot$CART$AUID
 )))
-
+x <- table(df$AUID)
+if (any(x > 1)) {
+    ## We might get here if AUID had multiple ORFs --> multiple nifH clusters (likely one valid and the
+    ## other "ERROR" as returned by CART).
+    cat("There should be one row of annotation per AUID but that is not the case. The following\n",
+        "AUIDs have multiple annotations:\n"
+    print(x[x > 1])
+    stop("Aborting. Please check your CART results/log for AUIDs with multiple nifH clusters",
+         "(due to multiple open reading frame predictions) and contact the authors for help.")
+}
+rm(x)
 
 #############
 ##

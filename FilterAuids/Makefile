@@ -19,6 +19,11 @@
 ## Usage:
 ##    make                # Default, described above.
 ##    make quality        # Only do the quality checks: contaminants, nifH-like.
+##    make KNOWN_NIFH_ASVS_FASTA=asvs_known_to_be_nifH.fasta
+##                        # Optional speed-up.  ASVs with exact matches in the FASTA will be
+##                        # classified as nifH, without searching ARBitrator's positive and
+##                        # negative results.  The FASTA could be known nifH ASVs from a
+##                        # previous run of the workflow.
 ##    make clean          # Remove main targets but not contaminant and nifH-like checks.
 ##    make superclean     # Remove main and quality targets
 ##
@@ -49,6 +54,14 @@ CHECKCONTAMS := $(shell which check_nifH_contaminants.sh || exit -1)
 CONTAM_CHECK=Check_contaminants/blast.96id.out
 CLASSIFYNIFH := $(shell which classifyNifH.sh || exit -1)
 NIFH_LIKE_CHECK=Check_NifH_like
+
+
+## Allow user to pass a FASTA of ASVs that are known to be nifH. classifyNifH.sh will
+## use this FASTA to skip blastx's of recognized ASVs (exact matches).
+ifdef KNOWN_NIFH_ASVS_FASTA
+    KNOWN_NIFH_ASVS_FASTA_ABSPATH = $(shell realpath $(KNOWN_NIFH_ASVS_FASTA))
+endif
+
 
 
 all: $(ALLTARGETS) quality
@@ -102,7 +115,7 @@ $(NIFH_LIKE_CHECK): $(INITIAL_FASTA)
 	@echo "of their hits to positive vs. negative examples is done later by filterAuids.R."
 	@mkdir Check_NifH_like.tmp ; \
 	cd Check_NifH_like.tmp ; \
-	$(CLASSIFYNIFH) $(INITIAL_FASTA) &> log.classifyNifH.txt
+	$(CLASSIFYNIFH) $(INITIAL_FASTA) $(KNOWN_NIFH_ASVS_FASTA_ABSPATH) &> log.classifyNifH.txt
 	@mv Check_NifH_like.tmp Check_NifH_like
 	@echo ">>>>> Finished ASV comparison to GenBank nifH <<<<<"
 	@echo
