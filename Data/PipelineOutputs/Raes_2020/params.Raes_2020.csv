@@ -8,7 +8,8 @@ NifH_minBits, 20
 ## Parameters forwarded to dada2::filterAndTrim()
 ## Non-CASAVA format for read IDs.  ID is in field 1.
 id.field, 1
-truncQ, 16
+truncLen.fwd, 213
+truncLen.rev, 153
 maxEE.fwd, 2
 maxEE.rev, 4
 
