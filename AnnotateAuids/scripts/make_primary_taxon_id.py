@@ -207,11 +207,11 @@ def clean_columns(df: pd.DataFrame) -> pd.DataFrame:
                 )
 
                 # Clean up columns
-            df["subcluster"] = df["subcluster"].fillna(value="")
+            df["subcluster"] = df["subcluster"].fillna(value="NA")
             df["cluster"] = (
                 df["cluster"]
                 .apply(lambda x: str(object=int(x)) if not pd.isna(x) else x)
-                .fillna(value="")
+                .fillna(value="NA")
             )
             # Make new ID columns
             df["MarineDiazo.id"] = (
@@ -275,10 +275,10 @@ def make_primary_id(
                     df.apply(
                         lambda row: (
                             "unknown" + row["subcluster"]
-                            if (not row["subcluster"] == "")
+                            if (not row["subcluster"] == "NA")
                             else (
                                 "unknown" + row["cluster"]
-                                if (not row["cluster"] == "")
+                                if (not row["cluster"] == "NA")
                                 else "unknown"
                             )
                         ),
@@ -310,7 +310,7 @@ def write_tsv(df: pd.DataFrame, output_path: str) -> bool:
     """
     if not df.empty or None:
         try:
-            df.to_csv(path_or_buf=output_path, sep="\t", index=False)
+            df.to_csv(path_or_buf=output_path, sep="\t", index=False, na_rep='NA')
             print(f"Output file '{output_path}' written as tsv.")
             return True
         except Exception as e:
