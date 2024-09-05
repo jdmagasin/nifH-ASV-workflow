@@ -3,7 +3,8 @@
 ## Parameters that impact DADA2 error models:  use defaults
 
 ## Parameters forwarded to dada2::filterAndTrim()
-truncQ, 16
+truncLen.fwd, 226
+truncLen.rev, 181
 maxEE.fwd, 2
 maxEE.rev, 4
 
