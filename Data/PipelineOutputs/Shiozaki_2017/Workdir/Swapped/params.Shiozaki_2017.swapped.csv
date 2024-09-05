@@ -6,7 +6,8 @@ forward, ADNGCCATCATYTCNCC
 NifH_minBits, 0
 
 ## Parameters forwarded to dada2::filterAndTrim()
-truncQ, 16
+truncLen.fwd, 213
+truncLen.rev, 213
 maxEE.fwd, 2
 maxEE.rev, 4
 
