@@ -5,7 +5,8 @@ NifH_minBits, 100
 
 ## Parameters forwarded to dada2::filterAndTrim()
 id.field, 1
-truncQ, 16
+truncLen.fwd, 195
+truncLen.rev, 180
 maxEE.fwd, 2
 maxEE.rev, 4
 
