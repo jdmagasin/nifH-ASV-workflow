@@ -21,16 +21,16 @@
 ##
 
 
-AK2HI	../Data/PipelineOutputs/AK2HI/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2022May29/TextData/asvs.noChimera.fasta	AK2HI:1:no_SRA
+AK2HI	../Data/PipelineOutputs/AK2HI/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2024Aug13/TextData/asvs.noChimera.fasta	AK2HI:1:no_SRA
 
 
-BentzonTilia_2015	../Data/PipelineOutputs/BentzonTilia_2015/Data.nobackup/Dada2PipeOutput/RoskildeFjord/RNA/Out.2021Sep14/TextData/asvs.noChimera.fasta	BentzonTilia_2015:1:SRP038933
-BentzonTilia_2015	../Data/PipelineOutputs/BentzonTilia_2015/Data.nobackup/Dada2PipeOutput/RoskildeFjord/DNA/Out.2021Sep14/TextData/asvs.noChimera.fasta	BentzonTilia_2015:2:SRP038933
-BentzonTilia_2015	../Data/PipelineOutputs/BentzonTilia_2015/Data.nobackup/Dada2PipeOutput/GreatBelt/RNA/Out.2021Sep14/TextData/asvs.noChimera.fasta	BentzonTilia_2015:3:SRP038933
-BentzonTilia_2015	../Data/PipelineOutputs/BentzonTilia_2015/Data.nobackup/Dada2PipeOutput/GreatBelt/DNA/Out.2021Sep14/TextData/asvs.noChimera.fasta	BentzonTilia_2015:4:SRP038933
+BentzonTilia_2015	../Data/PipelineOutputs/BentzonTilia_2015/Data.nobackup/Dada2PipeOutput/RoskildeFjord/RNA/Out.2024Aug13/TextData/asvs.noChimera.fasta	BentzonTilia_2015:1:SRP038933
+BentzonTilia_2015	../Data/PipelineOutputs/BentzonTilia_2015/Data.nobackup/Dada2PipeOutput/RoskildeFjord/DNA/Out.2024Aug13/TextData/asvs.noChimera.fasta	BentzonTilia_2015:2:SRP038933
+BentzonTilia_2015	../Data/PipelineOutputs/BentzonTilia_2015/Data.nobackup/Dada2PipeOutput/GreatBelt/RNA/Out.2024Aug13/TextData/asvs.noChimera.fasta	BentzonTilia_2015:3:SRP038933
+BentzonTilia_2015	../Data/PipelineOutputs/BentzonTilia_2015/Data.nobackup/Dada2PipeOutput/GreatBelt/DNA/Out.2024Aug13/TextData/asvs.noChimera.fasta	BentzonTilia_2015:4:SRP038933
 
 
-Ding_2021	../Data/PipelineOutputs/Ding_2021/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2022May31/TextData/asvs.noChimera.fasta	Ding_2021:1:SRP261427
+Ding_2021	../Data/PipelineOutputs/Ding_2021/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2024Aug13/TextData/asvs.noChimera.fasta	Ding_2021:1:SRP261427
 
 
 ## Gradoville_2020 includes cruises GRADIENTS 1 (2016) and 2 (2017).
@@ -44,18 +44,18 @@ Gradoville_2020	../Data/PipelineOutputs/Gradoville_2020/Data.nobackup/Dada2PipeO
 Hallstrom_2021	../Data/PipelineOutputs/Hallstrom_2021/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2022May18/TextData/asvs.noChimera.fasta	Hallstrom_2021:1:SRP277143
 
 
-Hallstrom_2022	../Data/PipelineOutputs/Hallstrom_2022/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2022Jul13/TextData/asvs.noChimera.fasta	Hallstrom_2022:1:SRP333639
+Hallstrom_2022	../Data/PipelineOutputs/Hallstrom_2022/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2024Aug13/TextData/asvs.noChimera.fasta	Hallstrom_2022:1:SRP333639
 
 
-Harding_2018	../Data/PipelineOutputs/Harding_2018/Data.nobackup/Dada2PipeOutput/FiltSterivex/Out.2021Aug27/TextData/asvs.noChimera.fasta	Harding_2018:1:no_SRA
-Harding_2018	../Data/PipelineOutputs/Harding_2018/Data.nobackup/Dada2PipeOutput/Filt0.2/Out.2021Aug27/TextData/asvs.noChimera.fasta	Harding_2018:2:no_SRA
-Harding_2018	../Data/PipelineOutputs/Harding_2018/Data.nobackup/Dada2PipeOutput/Filt3/Out.2021Aug27/TextData/asvs.noChimera.fasta	Harding_2018:3:no_SRA
+Harding_2018	../Data/PipelineOutputs/Harding_2018/Data.nobackup/Dada2PipeOutput/FiltSterivex/Out.2024Aug13/TextData/asvs.noChimera.fasta	Harding_2018:1:no_SRA
+Harding_2018	../Data/PipelineOutputs/Harding_2018/Data.nobackup/Dada2PipeOutput/Filt0.2/Out.2024Aug13/TextData/asvs.noChimera.fasta	Harding_2018:2:no_SRA
+Harding_2018	../Data/PipelineOutputs/Harding_2018/Data.nobackup/Dada2PipeOutput/Filt3/Out.2024Aug13/TextData/asvs.noChimera.fasta	Harding_2018:3:no_SRA
 
 
-Mulholland_2018	../Data/PipelineOutputs/Mulholland_2018/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2022May27/TextData/asvs.noChimera.fasta	Mulholland_2018:1:SRP377046
+Mulholland_2018	../Data/PipelineOutputs/Mulholland_2018/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2024Aug13/TextData/asvs.noChimera.fasta	Mulholland_2018:1:SRP377046
 
 
-NEMO	../Data/PipelineOutputs/NEMO/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2023Dec14/TextData/asvs.noChimera.fasta	NEMO:1:no_SRA
+NEMO	../Data/PipelineOutputs/NEMO/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2024Aug13/TextData/asvs.noChimera.fasta	NEMO:1:no_SRA
 
 
 ## Shiozaki_2017 - Mixed-orientation sequencing library. Combined ASVs from normal and swapped primer runs of the pipeline
@@ -68,13 +68,13 @@ Shiozaki_2018GBC	../Data/PipelineOutputs/Shiozaki_2018GBC/asvs.noChimera.combine
 Shiozaki_2018GBC	../Data/PipelineOutputs/Shiozaki_2018GBC/asvs.noChimera.combined.RNA.fasta	Shiozaki_2018GBC:2:DRP004319
 
 
-Shiozaki_2018LNO	../Data/PipelineOutputs/Shiozaki_2018LNO/Data.nobackup/Dada2PipeOutput/DNA/Out.2021Oct5/TextData/asvs.noChimera.fasta	Shiozaki_2018LNO:1:DRP004241
+Shiozaki_2018LNO	../Data/PipelineOutputs/Shiozaki_2018LNO/Data.nobackup/Dada2PipeOutput/DNA/Out.2024Aug13/TextData/asvs.noChimera.fasta	Shiozaki_2018LNO:1:DRP004241
 
 
-Shiozaki_2020	../Data/PipelineOutputs/Shiozaki_2020/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2022May26/TextData/asvs.noChimera.fasta	Shiozaki_2020:1:DRP006696
+Shiozaki_2020	../Data/PipelineOutputs/Shiozaki_2020/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2024Aug13/TextData/asvs.noChimera.fasta	Shiozaki_2020:1:DRP006696
 
 
-Tang_2020	../Data/PipelineOutputs/Tang_2020/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2022Jan24/TextData/asvs.noChimera.fasta	Tang_2020:1:SRP214458
+Tang_2020	../Data/PipelineOutputs/Tang_2020/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2024Aug13/TextData/asvs.noChimera.fasta	Tang_2020:1:SRP214458
 
 
 Sato_2021	../Data/PipelineOutputs/Sato_2021/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2022May21/TextData/asvs.noChimera.fasta	Sato_2021:1:DRP007115
@@ -83,27 +83,27 @@ Sato_2021	../Data/PipelineOutputs/Sato_2021/Data.nobackup/Dada2PipeOutput/DNA/Fr
 Selden_2021	../Data/PipelineOutputs/Selden_2021/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2022May19/TextData/asvs.noChimera.fasta	Selden_2021:1:SRP297611
 
 
-Raes_2020	../Data/PipelineOutputs/Raes_2020/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2022Jan18/TextData/asvs.noChimera.fasta	Raes_2020:1:SRP114822
+Raes_2020	../Data/PipelineOutputs/Raes_2020/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2024Aug13/TextData/asvs.noChimera.fasta	Raes_2020:1:SRP114822
 
 
-TianjUni_2016	../Data/PipelineOutputs/TianjUni_2016/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2022May26/TextData/asvs.noChimera.fasta	TianjUni_2016:1:SRP266399
+TianjUni_2016	../Data/PipelineOutputs/TianjUni_2016/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2024Aug13/TextData/asvs.noChimera.fasta	TianjUni_2016:1:SRP266399
 
 
-TianjUni_2017	../Data/PipelineOutputs/TianjUni_2017/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2022May27/TextData/asvs.noChimera.fasta	TianjUni_2017:1:SRP135690
+TianjUni_2017	../Data/PipelineOutputs/TianjUni_2017/Data.nobackup/Dada2PipeOutput/DNA/Frac_0.2/Out.2024Aug13/TextData/asvs.noChimera.fasta	TianjUni_2017:1:SRP135690
 
 
-Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn7/Out.2021Sep21/TextData/asvs.noChimera.fasta	Turk_2021:1:no_SRA
-Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn3/Out.2021Sep21/TextData/asvs.noChimera.fasta	Turk_2021:2:no_SRA
-Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn9/Out.2021Sep21/TextData/asvs.noChimera.fasta	Turk_2021:3:no_SRA
-Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn14/Out.2021Sep21/TextData/asvs.noChimera.fasta	Turk_2021:4:no_SRA
-Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn13/Out.2021Sep21/TextData/asvs.noChimera.fasta	Turk_2021:5:no_SRA
-Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn4/Out.2021Sep21/TextData/asvs.noChimera.fasta	Turk_2021:6:no_SRA
-Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn6/Out.2021Sep21/TextData/asvs.noChimera.fasta	Turk_2021:7:no_SRA
-Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn11/Out.2021Sep21/TextData/asvs.noChimera.fasta	Turk_2021:8:no_SRA
-Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn1.1/Out.2021Sep21/TextData/asvs.noChimera.fasta	Turk_2021:9:no_SRA
-Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn16/Out.2021Sep21/TextData/asvs.noChimera.fasta	Turk_2021:10:no_SRA
-Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn1/Out.2021Sep21/TextData/asvs.noChimera.fasta	Turk_2021:11:no_SRA
-Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn5/Out.2021Sep21/TextData/asvs.noChimera.fasta	Turk_2021:12:no_SRA
-Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn12/Out.2021Sep21/TextData/asvs.noChimera.fasta	Turk_2021:13:no_SRA
-Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn15/Out.2021Sep21/TextData/asvs.noChimera.fasta	Turk_2021:14:no_SRA
-Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn2/Out.2021Sep21/TextData/asvs.noChimera.fasta	Turk_2021:15:no_SRA
+Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn7/Out.2024Aug13/TextData/asvs.noChimera.fasta	Turk_2021:1:no_SRA
+Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn3/Out.2024Aug13/TextData/asvs.noChimera.fasta	Turk_2021:2:no_SRA
+Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn9/Out.2024Aug13/TextData/asvs.noChimera.fasta	Turk_2021:3:no_SRA
+Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn14/Out.2024Aug13/TextData/asvs.noChimera.fasta	Turk_2021:4:no_SRA
+Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn13/Out.2024Aug13/TextData/asvs.noChimera.fasta	Turk_2021:5:no_SRA
+Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn4/Out.2024Aug13/TextData/asvs.noChimera.fasta	Turk_2021:6:no_SRA
+Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn6/Out.2024Aug13/TextData/asvs.noChimera.fasta	Turk_2021:7:no_SRA
+Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn11/Out.2024Aug13/TextData/asvs.noChimera.fasta	Turk_2021:8:no_SRA
+Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn1.1/Out.2024Aug13/TextData/asvs.noChimera.fasta	Turk_2021:9:no_SRA
+Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn16/Out.2024Aug13/TextData/asvs.noChimera.fasta	Turk_2021:10:no_SRA
+Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn1/Out.2024Aug13/TextData/asvs.noChimera.fasta	Turk_2021:11:no_SRA
+Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn5/Out.2024Aug13/TextData/asvs.noChimera.fasta	Turk_2021:12:no_SRA
+Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn12/Out.2024Aug13/TextData/asvs.noChimera.fasta	Turk_2021:13:no_SRA
+Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn15/Out.2024Aug13/TextData/asvs.noChimera.fasta	Turk_2021:14:no_SRA
+Turk_2021	../Data/PipelineOutputs/Turk_2021/Data.nobackup/Dada2PipeOutput/DNA/Stn2/Out.2024Aug13/TextData/asvs.noChimera.fasta	Turk_2021:15:no_SRA
