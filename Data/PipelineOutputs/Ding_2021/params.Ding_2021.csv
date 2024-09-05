@@ -8,7 +8,8 @@ NifH_minBits, 0
 ## Parameters forwarded to dada2::filterAndTrim()
 ## SRA read names (not CASAVA) so read ID is in field #1.
 id.field, 1
-truncQ, 16
+truncLen.fwd, 192
+truncLen.rev, 147
 maxEE.fwd, 2
 maxEE.rev, 4
 
