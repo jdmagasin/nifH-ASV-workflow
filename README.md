@@ -13,7 +13,7 @@ The following figure shows the workflow:
 
 ## Running the workflow
 
-The workflow requires the [DADA2 _nifH_ pipeline](https://github.com/jdmagasin/nifH_amplicons_DADA2) as well as its ancillary tools.  Please see the Installation directory in the pipeline repository.  Then you must install the additinoal packages required by the post-pipeline stages following these [Installation instructions](Installation/INSTALL.txt).
+The workflow requires the [DADA2 _nifH_ pipeline](https://github.com/jdmagasin/nifH_amplicons_DADA2) as well as its ancillary tools.  Please see the Installation directory in the pipeline repository.  Then you must install the additional packages required by the post-pipeline stages as described in these [Installation instructions](Installation/INSTALL.txt).
 
 The DADA2 _nifH_ pipeline outputs for all studies in the _nifH_ ASV database are provided in the Data directory.  So you do not need to run the pipeline to recreate the database.  However, if you wish to run the pipeline, the parameters files used for each study are included in Data.  You are free to modify them.
 
