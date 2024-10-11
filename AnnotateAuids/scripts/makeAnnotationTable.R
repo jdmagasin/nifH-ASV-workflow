@@ -46,33 +46,54 @@ if (length(idx) != 6) {
 }
 names(annotFiles) <- c("ARB2017", "Genome879", "MarineDiazo", "UCYNAoligos", "CART", "CCAMP")
 
-##
-## Load results from annotation tools
-##
-cat("Loading annotation tables\n")
-annot <- lapply(names(annotFiles), function(x) {
-    fn <- annotFiles[x]
-    cat("Loading", fn, "...")
-    if (grepl("\\.(map|csv)$", fn)) {
-        x <- read.csv(fn)
-    } else {
-        x <- read.table(fn)
-    }
-    cat("okay, loaded", paste(dim(x), collapse = " by "), "table.\n")
-    x
-})
-names(annot) <- names(annotFiles)
 
-blastHeader <- c(
-    "AUID", "subject", "pid", "alen", "mismatch", "gapopen",
-    "q.start", "q.end", "s.start", "s.end", "evalue", "bits"
-)
-colnames(annot$ARB2017) <- blastHeader
-colnames(annot$Genome879) <- blastHeader
-colnames(annot$MarineDiazo) <- blastHeader
-colnames(annot$UCYNAoligos) <- blastHeader
-colnames(annot$CART) <- c("AUID", "cluster", "subcluster")
-colnames(annot$CCAMP) <- c("AUID", "orf.len", "hasCC.len", "hasCCAMP.len")
+## Make an empty data frame with the specified columns
+MakeEmptyFrame <- function(cols) {
+    stopifnot(length(cols) > 0)
+    as.data.frame(matrix(nrow = 0, ncol = length(cols), dimnames = list(NULL, cols)))
+}
+
+## Load an annnotation table, possibly empty. Return data frame with
+## the specified column names.
+LoadAnnotTable <- function(fname, cols)
+{
+    cat("Loading", fname, "...")
+    stopifnot(file.exists(fname))
+    ## File could have 0 bytes, or if gzipped then ~30 bytes for the compression header.
+    if ((file.size(fname) == 0) | (length(readLines(fname, n=1)) == 0)) {
+        cat("This file is empty.\n")
+        df <- MakeEmptyFrame(cols)
+    } else if (grepl("\\.(map|csv)$", fname)) {
+        df <- read.csv(fname, col.names = cols)
+    } else {
+        df <- read.table(fname, col.names = cols)
+    }
+    cat("okay, loaded", paste(dim(df), collapse = " by "), "table.\n")
+    df
+}
+
+
+## Headers for the various annotation tables
+blastHeader <- c("AUID", "subject", "pid", "alen", "mismatch", "gapopen",
+                 "q.start", "q.end", "s.start", "s.end", "evalue", "bits")
+cartHeader  <- c("AUID", "cluster", "subcluster")
+ccampHeader <- c("AUID", "orf.len", "hasCC.len", "hasCCAMP.len")
+
+## Load results from annotation tools.  Empty results possible.
+cat("Loading annotation tables\n")
+annot <- list()
+annot$ARB2017     <- LoadAnnotTable(annotFiles['ARB2017'],     blastHeader)
+annot$Genome879   <- LoadAnnotTable(annotFiles['Genome879'],   blastHeader)
+annot$MarineDiazo <- LoadAnnotTable(annotFiles['MarineDiazo'], blastHeader)
+annot$UCYNAoligos <- LoadAnnotTable(annotFiles['UCYNAoligos'], blastHeader)
+annot$CART        <- LoadAnnotTable(annotFiles['CART'],        cartHeader)
+annot$CCAMP       <- LoadAnnotTable(annotFiles['CCAMP'],       ccampHeader)
+
+## CART always has results (unlike a search) and so should CCAMP.  So do not tolerate empty
+## results for these two.  Keeps later code simpler.
+stopifnot(nrow(annot$CART) > 0)
+stopifnot(nrow(annot$CCAMP) > 0)
+
 
 cat("Loading Genome879 taxomomy map...")
 g879taxPath <- file.path("./data", "genome879_acc_taxstring.txt")
@@ -100,65 +121,72 @@ cat("done.\n")
 
 
 bestHits <- list()
+blastColsForBestHits <- c("AUID", "subject", "pid", "alen", "evalue")
+bestHits$ARB2017 <- MakeEmptyFrame(blastColsForBestHits)
 
 ##
 ## Get top hits to ARB2017. Then if necessary replace with equally top but
 ## better annotated hits.
 ##
-## match() gets the top b/c blast results are sorte by E-value for each query.
-auids <- unique(annot$ARB2017$AUID)
-bestHitsIdx <- match(auids, annot$ARB2017$AUID)
+## match() gets the top b/c blast results are sorted by E-value for each query.
+if (nrow(annot$ARB2017) > 0) {
+    auids <- unique(annot$ARB2017$AUID)
+    bestHitsIdx <- match(auids, annot$ARB2017$AUID)
 
-taxa <- sub("^.+\\|", "", annot$ARB2017[bestHitsIdx, "subject"]) # strip accessions
-useless <- c(
-    "^uncultured_marine", "^uncultured_bacterium", "^uncultured_nitrogen-fixing",
-    "^uncultured_microorganism", "^uncultured_soil", "^metagenome"
-)
-idx <- unique(unlist(lapply(useless, function(pat) which(regexpr(pat, taxa) != -1))))
+    taxa <- sub("^.+\\|", "", annot$ARB2017[bestHitsIdx, "subject"]) # strip accessions
+    useless <- c(
+        "^uncultured_marine", "^uncultured_bacterium", "^uncultured_nitrogen-fixing",
+        "^uncultured_microorganism", "^uncultured_soil", "^metagenome"
+    )
+    idx <- unique(unlist(lapply(useless, function(pat) which(regexpr(pat, taxa) != -1))))
 
-## For all the best hits with useless annotation, try to find an equally good hit
-## that is not useless.  This code is a little complicated.  The function takes
-## an index into annot$ARB2017, uses it to create an index of the next 50 hits,
-## which it searches: must be from the target AUID, have same E-value, and a
-## subject that doesn't start with "uncultured". Function returns an index into
-## annot$ARB2017.
-alts <- sapply(
-    bestHitsIdx[idx],
-    function(i) {
-        ## Get this AUID's top E-value.
-        auid <- annot$ARB2017[i, "auid"]
-        eval <- annot$ARB2017[i, "evalue"]
-        ## Consider the next 50 hits.  Little risk of this running off table's end.
-        altsIdx <- seq(i + 1, i + 51)
-        altsIdx <- altsIdx[which((annot$ARB2017[altsIdx, "AUID"] == auid) &
-            (annot$ARB2017[altsIdx, "evalue"] <= eval))]
-        if (length(altsIdx) > 0) {
-            altsIdx <- altsIdx[grep("^uncultured", annot$ARB2017[altsIdx, "subject"], invert = T)]
+    ## For all the best hits with useless annotation, try to find an equally good hit
+    ## that is not useless.  This code is a little complicated.  The function takes
+    ## an index into annot$ARB2017, uses it to create an index of the next 50 hits,
+    ## which it searches: must be from the target AUID, have same E-value, and a
+    ## subject that doesn't start with "uncultured". Function returns an index into
+    ## annot$ARB2017.
+    alts <- sapply(
+        bestHitsIdx[idx],
+        function(i) {
+            ## Get this AUID's top E-value.
+            auid <- annot$ARB2017[i, "auid"]
+            eval <- annot$ARB2017[i, "evalue"]
+            ## Consider the next 50 hits.  Little risk of this running off table's end.
+            altsIdx <- seq(i + 1, i + 51)
+            altsIdx <- altsIdx[which((annot$ARB2017[altsIdx, "AUID"] == auid) &
+                                     (annot$ARB2017[altsIdx, "evalue"] <= eval))]
+            if (length(altsIdx) > 0) {
+                altsIdx <- altsIdx[grep("^uncultured", annot$ARB2017[altsIdx, "subject"], invert = T)]
+            }
+            if (length(altsIdx) > 0) {
+                i <- altsIdx[1]  # Found a replacement(s)
+            }
+            i
         }
-        if (length(altsIdx) > 0) {
-            i <- altsIdx[1]
-        } # Found a replacement(s)
-                i
-    }
-)
+    )
 
-cat(
-    "\nThere were", length(idx), "AUIDs that had top hits in ARB with vague annotation (e.g.\n",
-    "uncultured_microorganism).  I tried to find alternative hits with equally good E-values and\n",
-    "more useful annotation.  I was able to do this for", sum(bestHitsIdx[idx] != alts), "AUIDs.\n"
-)
-bestHitsIdx[idx] <- alts
-stopifnot(length(bestHitsIdx) == length(auids))
+    cat(
+        "\nThere were", length(idx), "AUIDs that had top hits in ARB with vague annotation (e.g.\n",
+        "uncultured_microorganism).  I tried to find alternative hits with equally good E-values and\n",
+        "more useful annotation.  I was able to do this for", sum(bestHitsIdx[idx] != alts), "AUIDs.\n"
+    )
+    bestHitsIdx[idx] <- alts
+    stopifnot(length(bestHitsIdx) == length(auids))
 
-bestHits$ARB2017 <- annot$ARB2017[bestHitsIdx, c("AUID", "subject", "pid", "alen", "evalue")]
+    bestHits$ARB2017 <- annot$ARB2017[bestHitsIdx, c("AUID", "subject", "pid", "alen", "evalue")]
+}
 
 
 ##
 ## Genome879 don't need alternatives -- we always know the gennome we hit:)
 ##
-auids <- unique(annot$Genome879$AUID)
-bestHitsIdx <- match(auids, annot$Genome879$AUID)
-bestHits$Genome879 <- annot$Genome879[bestHitsIdx, c("AUID", "subject", "pid", "alen", "evalue")]
+bestHits$Genome879 <- MakeEmptyFrame(blastColsForBestHits)
+if (nrow(annot$Genome879) > 0) {
+    auids <- unique(annot$Genome879$AUID)
+    bestHitsIdx <- match(auids, annot$Genome879$AUID)
+    bestHits$Genome879 <- annot$Genome879[bestHitsIdx, blastColsForBestHits]
+}
 
 ## Merge the blast annotations
 df <- merge(x = bestHits$ARB2017, y = bestHits$Genome879, by = "AUID", all = T)
@@ -171,47 +199,48 @@ stopifnot(setequal(df$AUID, c(bestHits$ARB2017$AUID, bestHits$Genome879$AUID)))
 
 ## For top Genome879 hits, replace the id (which is an ARB name apparently)
 ## with the genus_species.  Also tack on taxonomic info.
-cat("\nLooking up more informative names and taxa for the hits to Genome879.\n")
-ghits <- as.character(df$Genome879.id)
-idx <- match(ghits, g879taxa$arb_name)
-ghits[!is.na(idx)] <- g879taxa[idx[!is.na(idx)], "genus_species"]
-stopifnot(!g879taxa$genus_species %in% c(NA, "")) # So we did not make ghits worse.
-df$Genome879.id <- ghits
-## Now the taxa, in a single column. Separate levels with ';'.  Use 'unknown' for
-## levels that are NA (only kingdom).
-x <- apply(
-    g879taxa[idx[!is.na(idx)], c("kingdom", "phylum", "class", "order", "family", "genus")], 1,
-    function(x) {
-        x[is.na(x)] <- "unknown"
-        paste(x, collapse = ";")
-    }
-)
-df[!is.na(idx), "Genome879.tax"] <- x
-
-
-## Genome879 has NifH cluster or subcluster.  Here we could temporarily tack on
-## the cluster and then compare it to what CART assigned.  But I don't know if
-## the subcluster for the best hit in G879 should be the same as the CART
-## assigned subcluster.  Often I see mismatches.
-## For *cluster* mismatches are rare e.g. 63 mismatches between CART vs the best
-## G879 hit, but 3707 matches.  The mismatches are often ~catch-all cluster "4"
-## from CART but cluster 3 for the G879 hit.
-## df[!is.na(idx),'TEMPCLUST'] <- sub('','',g879taxa[idx[!is.na(idx)],'nifHCluster'])
+if (length(df$Genome879.id) > 0) {
+    cat("\nLooking up more informative names and taxa for the hits to Genome879...")
+    ghits <- as.character(df$Genome879.id)
+    idx <- match(ghits, g879taxa$arb_name)
+    ghits[!is.na(idx)] <- g879taxa[idx[!is.na(idx)], "genus_species"]
+    stopifnot(!g879taxa$genus_species %in% c(NA, "")) # So we did not make ghits worse.
+    df$Genome879.id <- ghits
+    ## Now the taxa, in a single column. Separate levels with ';'.  Use 'unknown' for
+    ## levels that are NA (only kingdom).
+    x <- apply(
+        g879taxa[idx[!is.na(idx)], c("kingdom", "phylum", "class", "order", "family", "genus")], 1,
+        function(x) {
+            x[is.na(x)] <- "unknown"
+            paste(x, collapse = ";")
+        }
+    )
+    df[!is.na(idx), "Genome879.tax"] <- x
+    cat("done.\n")
+} else {
+    ## Even if no hits, we need column Genome879.tax
+    df <- cbind(df, MakeEmptyFrame('Genome879.tax'))
+}
 
 
 #############
 ##
 ## Marine cyano/NCD nifH DB
 ##
-auids <- unique(annot$MarineDiazo$AUID)
-bestHitsIdx <- match(auids, annot$MarineDiazo$AUID)
-bestHits$MarineDiazo <- annot$MarineDiazo[bestHitsIdx, c("AUID", "subject", "pid", "alen", "evalue")]
+bestHits$MarineDiazo <- MakeEmptyFrame(blastColsForBestHits)
+if (nrow(annot$MarineDiazo) > 0) {
+    auids <- unique(annot$MarineDiazo$AUID)
+    bestHitsIdx <- match(auids, annot$MarineDiazo$AUID)
+    bestHits$MarineDiazo <- annot$MarineDiazo[bestHitsIdx, blastColsForBestHits]
 
-## Tack on 'description' from the annotation companion to the FASTA
-mdat <- bestHits$MarineDiazo
-idx <- match(mdat$subject, cyanoNCDtaxa$seqID)
-stopifnot(!is.na(idx)) # If trips, then the FASTA and annotation are out of sync.
-mdat$description <- cyanoNCDtaxa[idx, "description"]
+    ## Tack on 'description' from the annotation companion to the FASTA
+    mdat <- bestHits$MarineDiazo
+    idx <- match(mdat$subject, cyanoNCDtaxa$seqID)
+    stopifnot(!is.na(idx)) # If trips, then the FASTA and annotation are out of sync.
+    mdat$description <- cyanoNCDtaxa[idx, "description"]
+} else {
+    mdat <- MakeEmptyFrame(c(blastColsForBestHits, "description"))
+}
 
 ## Merge with the ARB and G879 blast annotations
 colnames(mdat) <- c("AUID", paste0("MarineDiazo.", colnames(mdat)[-1]))
@@ -226,16 +255,21 @@ stopifnot(setequal(df$AUID, c(
 ##
 ## UCYN-A oligos
 ##
-auids <- unique(annot$UCYNAoligos$AUID)
-bestHitsIdx <- match(auids, annot$UCYNAoligos$AUID)
-bestHits$UCYNAoligos <- annot$UCYNAoligos[bestHitsIdx, c("AUID", "subject", "pid", "alen", "evalue")]
+bestHits$UCYNAoligos <- MakeEmptyFrame(blastColsForBestHits)
+if (nrow(annot$UCYNAoligos) > 0) {
+    auids <- unique(annot$UCYNAoligos$AUID)
+    bestHitsIdx <- match(auids, annot$UCYNAoligos$AUID)
+    bestHits$UCYNAoligos <- annot$UCYNAoligos[bestHitsIdx, blastColsForBestHits]
 
-## Tack on 'description' from the annotation companion to the FASTA
-mdat <- bestHits$UCYNAoligos
-idx <- match(mdat$subject, ucynaOLIGOtaxa$seqID)
-stopifnot(!is.na(idx)) # If trips, then the FASTA and annotation are out of sync.
-mdat$description <- ucynaOLIGOtaxa[idx, "description"]
-
+    ## Tack on 'description' from the annotation companion to the FASTA
+    mdat <- bestHits$UCYNAoligos
+    idx <- match(mdat$subject, ucynaOLIGOtaxa$seqID)
+    stopifnot(!is.na(idx)) # If trips, then the FASTA and annotation are out of sync.
+    mdat$description <- ucynaOLIGOtaxa[idx, "description"]
+} else {
+    mdat <- MakeEmptyFrame(c(blastColsForBestHits, "description"))
+}
+    
 ## Merge with the ARB and G879 blast annotations
 colnames(mdat) <- c("AUID", paste0("UCYNAoligos.", colnames(mdat)[-1]))
 df <- merge(x = df, y = mdat, by = "AUID", all = T)
@@ -249,6 +283,8 @@ stopifnot(setequal(df$AUID, c(
 ##
 ## And now add CART annotation.
 ##
+## Recall that above we required non-empty CART results (though this
+## should work even if CART results were empty).
 df <- merge(x = df, y = annot$CART, by = "AUID", all = T)
 stopifnot(setequal(df$AUID, c(
     bestHits$ARB2017$AUID, bestHits$Genome879$AUID,
@@ -260,12 +296,13 @@ if (any(x > 1)) {
     ## We might get here if AUID had multiple ORFs --> multiple nifH clusters (likely one valid and the
     ## other "ERROR" as returned by CART).
     cat("There should be one row of annotation per AUID but that is not the case. The following\n",
-        "AUIDs have multiple annotations:\n"
+        "AUIDs have multiple annotations:\n")
     print(x[x > 1])
     stop("Aborting. Please check your CART results/log for AUIDs with multiple nifH clusters",
          "(due to multiple open reading frame predictions) and contact the authors for help.")
 }
 rm(x)
+
 
 #############
 ##
@@ -273,10 +310,11 @@ rm(x)
 ## (1) For AUIDs that have annotation from above sources, include the Switch I/II pattern checks.
 ## (2) For AUIDs without annotation, add them to 'df' only if the full CCAMP pattern is there.
 ##
+## Recall that above we required non-empty CCAMP results.
 
 auids1 <- df$AUID                                     # AUIDs with annotation (1)
 auids2 <- subset(annot$CCAMP, hasCCAMP.len > 0)$AUID  # For (2), AUIDs with full pattern...
-auids2 <- setdiff(auids, auids1)                      # ...but no annotation
+auids2 <- setdiff(auids2, auids1)                     # ...but no annotation
 df <- merge(x = df, y = subset(annot$CCAMP, AUID %in% c(auids1, auids2)), by = "AUID", all = T)
 stopifnot(nrow(df) == length(auids1) + length(auids2))
 
