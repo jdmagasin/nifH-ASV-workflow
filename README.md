@@ -1,7 +1,7 @@
 # Workflow for processing _nifH_ amplicon data sets
 
 This repository contains all post-pipeline software stages and data deliverables described in Morando, Magasin et al. 2024.  The workflow was used to process nearly all published _nifH_ amplicon MiSeq data sets that existed at the time of publication, as well as two new data sets produced by the [Zehr Lab](https://www.jzehrlab.com/) at [UC Santa Cruz](https://www.ucsc.edu/). The samples are shown in this map which links to an interactive Google map with study names, sample IDs, and collection information for each sample.
-[![Map of studies used in Morando, Magasin et al. 2024](images_for_readme/Morando_Magasin_et_al_2024_studies_used.png)](https://www.google.com/maps/d/edit?mid=1i3IpZQwmywhLNK-DFnw_3gtrf9gY2u8&usp=sharing)
+[![Map of studies used in Morando, Magasin et al. 2024](images_for_readme/Morando_Magasin_et_al_2024_studies_used.png)](https://www.google.com/maps/d/u/0/edit?mid=1OlWftvxU_o7Fy3nFsSJDcUlbEWSX_U0&usp=sharing)
 
 
 ## Workflow overview
@@ -13,9 +13,9 @@ The following figure shows the workflow:
 
 ## Running the workflow
 
-The workflow requires the [DADA2 _nifH_ pipeline](https://github.com/jdmagasin/nifH_amplicons_DADA2) as well as its ancillary tools.  Please see the Installation directory in the pipeline repository.  Additionally you will need to install GNU make to run the post-pipeline stages, each of which uses a Makefile.  Please see the [Installation instructions](Installation/INSTALL.txt).
+The workflow requires the [DADA2 _nifH_ pipeline](https://github.com/jdmagasin/nifH_amplicons_DADA2) as well as its ancillary tools.  Please see the Installation directory in the pipeline repository.  Then you must install the additional packages required by the post-pipeline stages as described in these [Installation instructions](Installation/INSTALL.txt).
 
-The DADA2 _nifH_ pipeline outputs for all studies are provided in the Data directory.  You do not need to run the pipeline.  However, if you wish to run the pipeline, the parameters files used for each study are included in Data.  You are free to modify them.
+The DADA2 _nifH_ pipeline outputs for all studies in the _nifH_ ASV database are provided in the Data directory.  So you do not need to run the pipeline to recreate the database.  However, if you wish to run the pipeline, the parameters files used for each study are included in Data.  You are free to modify them.
 
 Each of the post-pipeline stages 1 through 6 can be run -- in order -- by entering the associated directory and running "make" from your shell's command line.  For example, if I wanted to run the GatherAsvs stage I would do the following from the command line:
 
