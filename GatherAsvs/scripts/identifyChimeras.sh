@@ -9,11 +9,11 @@
 WDIR="NonChimericAsvs"
 LOG="chimera.log"
 
-## Exit when any command fails, ande give an error message on EXIT.  Also track
+## Exit when any command fails, and give an error message on ERR.  Also track
 ## the last command executed (DEBUG).
 ## 
 set -e
-trap 'echo -e "The following command failed with exit code $?:\n${last_command}\n\nCheck $WDIR/$LOG for clues.\n"' EXIT
+trap 'echo -e "The following command failed with exit code $?:\n${last_command}\n\nCheck $WDIR/$LOG for clues.\n"' ERR
 trap 'last_command=$current_command; current_command=$BASH_COMMAND' DEBUG
 
 
