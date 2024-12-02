@@ -181,10 +181,10 @@ def clean_columns(df: pd.DataFrame) -> pd.DataFrame:
             required_headers: list[str] = [
                 "subcluster",
                 "cluster",
-                "MarineDiazo.description",
-                "MarineDiazo.subject",
+                # "MarineDiazo.description",
+                # "MarineDiazo.subject",
                 "Genome879.pctId",
-                "UCYNAoligos.description",
+                # "UCYNAoligos.description",
                 "Genome879.tax",
             ]
             missing_headers: list[str] = [
@@ -206,7 +206,7 @@ def clean_columns(df: pd.DataFrame) -> pd.DataFrame:
                     f"The following required columns contain only NA values: {', '.join(columns_with_na_values)}"
                 )
 
-                # Clean up columns
+            # Clean up columns
             df["subcluster"] = df["subcluster"].fillna(value="NA")
             df["cluster"] = (
                 df["cluster"]
@@ -214,11 +214,13 @@ def clean_columns(df: pd.DataFrame) -> pd.DataFrame:
                 .fillna(value="NA")
             )
             # Make new ID columns
-            df["MarineDiazo.id"] = (
-                df["MarineDiazo.description"] + ";" + df["MarineDiazo.subject"]
+            df["MarineDiazo.id"] = df.apply(
+                lambda row : f"{row['MarineDiazo.description']};{row['MarineDiazo.subject']}" if pd.notna(row["MarineDiazo.description"]) and pd.notna(row["MarineDiazo.subject"]) else pd.NA,
+                axis=1
             )
             df["UCYNAoligos.id"] = (
-                "UCYN-" + df["UCYNAoligos.description"].str.split("_").str[1]
+                df["UCYNAoligos.description"]
+                .apply(lambda x: f"UCYN-{x.split("_")[1]}" if pd.notna(x) else pd.NA)
             )
 
             return df
