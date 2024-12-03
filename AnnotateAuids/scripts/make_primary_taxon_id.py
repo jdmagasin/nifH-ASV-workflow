@@ -199,7 +199,7 @@ def clean_columns(df: pd.DataFrame) -> pd.DataFrame:
             )
             df["UCYNAoligos.id"] = (
                 df["UCYNAoligos.description"]
-                .apply(lambda x: f"UCYN-{x.split("_")[1]}" if pd.notna(x) else pd.NA)
+                .apply(lambda x: f"UCYN-{x.split('_')[1]}" if pd.notna(x) else pd.NA)
             )
 
             return df
