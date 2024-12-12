@@ -5,34 +5,18 @@ make_primary_taxon_id.py
 This module adds a primary_id column to an annotation table and is part of the AnnotateAuids stage of the nifH-ASV-workflow. 
 
 Overview:
-    - reads an input annotation table tsv file
-    - cleans up columns in the DataFrame
-    - creates a primary taxonomy ID -> primary_id
-    - writes the updated annotation table with new column primary_id added
-make_primary_taxon_id.py is managed by a Makefile and depends on the merged annotation table (auids.annot.tsv) created by the AnnotateAuids stage of the nifH-ASV-workflow. A new column "primary_id" is added to the input annotation table, representing the most informative taxonomic ID aggregated across the merged annotation table supplied. This 'primary ID' is the suggested way to refer to each AUID and is assigned hierarchically. Oligotypes for UCYN-A are always used when available. NCD/cyano ID are consider next followed by Genome879 tax ID if it passes a new threshold supplied to the module (default is 97.0%). A new threshold is considered here because the original percent identity used was low to improve the chances of finding a match. However, for analysis purposes, a more refined value is preferred. If none of these specific ID are assigned, the more general nifH cluster is used.
+    - Reads an input annotation table tsv file
+    - Cleans up columns in the DataFrame
+    - Creates a primary taxonomy ID -> primary_id
+    - Writes the updated annotation table with new column primary_id added
 
-A main function executes and manages the entire process of the script. Below is a breakdown of its functionality:
+    The script depends on the merged annotation table (auids.annot.tsv) created by the AnnotateAuids stage of the nifH-ASV-workflow.
 
-    1. Parse Command-Line Arguments:
-        - Uses argparse module to parse the command-line arguments provided by the user.
-        - Requires the input path to the annotation table, output path for the updated table, and optionally, the minimum threshold percentage identity for Genome879 ID. 97% is used by default.
-    
-    2. Read Input Data:
-        - Calls the 'read_tsv()' function to read the input annotation table into a pandas DataFrame.
-        - Handles errors related to file not found or empty DataFrame.
-
-    3. Clean Columns:
-        - Invokes the 'clean_columns()' function to perform necessary cleanup operations on the DataFrame.
-        - Ensures that the DataFrame is properly formatted and ready for primary ID generation.
-
-    4. Generate Primary IDs:
-        - Utilizes the 'make_primary_id()' function to create primary taxonomy IDs based on specified criteria.
-        - Primary IDs are assigned hierarchically, considering various taxonomic IDs and thresholds.
-
-    5. Write Output Data:
-        - Calls the 'write_tsv()' function to write the updated DataFrame with primary IDs to a TSV file.
-        - Provides feedback to the user upon successful completion or error during file writing.
-
+Dependencies:
+    - pandas
+    - os
+    - sys
+    - argparse
 
 Usage:
     python3 make_primary_taxon_id.py <path_to_input_table> <path_to_output_table> [--min_pid_genome879 <threshold_pid>] [-h,--help]
@@ -42,11 +26,27 @@ Arguments:
     output_table: Path to the output annotation table with primary ID added.
     --min_pid_genome879: Minimum threshold percentage identity to consider. Genome879.id in primary ID. If not provided, default value is 97.0.
 
-Dependencies:
-- pandas
-
 Returns:
     None
+
+Exit Codes:
+    0: Successful execution
+    1: General error (file not found, empty DataFrame, parsing error, etc.)
+    5: Failed to parse command-line arguments
+    11: Unexpected error during script execution
+
+Input File Format:
+    TSV file with required columns: subcluster, cluster, Genome879.pctId, Genome879.tax, MarineDiazo.description, MarineDiazo.subject, UCYNAoligos.description
+
+Output File Format:
+    TSV file with all input columns plus an additional 'primary_id' column
+
+Error Handling:
+    - Checks for missing or empty required columns
+    - Handles file not found, empty DataFrame, and parsing errors
+    - Provides informative error messages for various failure scenarios
+
+Author: Michael (Mo) Morando
 
 """
 
@@ -55,6 +55,7 @@ import argparse
 import sys
 import pandas as pd
 from argparse import RawTextHelpFormatter
+from typing import List
 
 __author__ = "Michael (Mo) Morando"
 __copyright__ = "Copyright 2023"
@@ -62,59 +63,19 @@ __maintainer__ = "Michael (Mo) Morando"
 __email__ = "mikemo@gmail.com"
 __status__ = "Stable"
 
-# Get the full path to the currently running script
-script_path: str = __file__
-
 # Extract the name of the script for use later
-script_name: str = os.path.basename(p=script_path)
+script_name: str = os.path.basename(p=__file__)
 
-# General print statement to show script was called
-print(f"{script_name} is currently running...")
-
-
-# _# Script starts #_#
-def setup_argparse() -> argparse.ArgumentParser:
+def setup_input_args(parser:  argparse.ArgumentParser) -> None:
     """
-    Set up argparse for command-line argument parsing.
+    Add input arguments to the parser.
+
+    Args:
+        parser (argparse.ArgumentParser): The argument parser object to add arguments to.
 
     Returns:
-        argparse.ArgumentParser: An ArgumentParser object configured with script-specific command-line argument options.
+        None
     """
-    parser = argparse.ArgumentParser(
-        description=f"""
-Overview of {script_name}:
-    - reads an input annotation table tsv file
-    - cleans up columns in the DataFrame
-    - creates a primary taxonomy ID -> primary_id
-    - writes the updated annotation table with new column primary_id added
-This module is managed by a Makefile and depends on the merged annotation table (auids.annot.tsv) created by the AnnotateAuids stage of the nifH-ASV-workflow. A new column "primary_id" is added to the input annotation table, representing the most informative taxonomic ID aggregated across the merged annotation table supplied. This 'primary ID' is the suggested way to refer to each AUID and is assigned hierarchically. Oligotypes for UCYN-A are always used when available. NCD/cyano ID are consider next followed by Genome879 tax ID if it passes a new threshold supplied to the module (default is 97.0%). A new threshold is considered here because the original percent identity used was low to improve the chances of finding a match. However, for analysis purposes, a more refined value is preferred. If none of these specific ID are assigned, the more general nifH cluster is used.
-
-	A main function executes and manages the entire process of the script. Below is a breakdown of its functionality:
-
-	1. Parse Command-Line Arguments:
-	- Uses argparse module to parse the command-line arguments provided by the user.
-    - Requires the input path to the annotation table, output path for the updated table, and optionally, the minimum threshold percentage identity for Genome879 ID. 97% is used by default.
-
-	2. Read Input Data:
-	- Calls the 'read_tsv()' function to read the input annotation table into a pandas DataFrame.
-	- Handles errors related to file not found or empty DataFrame.
-
-	3. Clean Columns:
-	- Invokes the 'clean_columns()' function to perform necessary cleanup operations on the DataFrame.
-	- Ensures that the DataFrame is properly formatted and ready for primary ID generation.
-
-	4. Generate Primary IDs:
-	- Utilizes the 'make_primary_id()' function to create primary taxonomy IDs based on specified criteria.
-	- Primary IDs are assigned hierarchically, considering various taxonomic IDs and thresholds.
-
-	5. Write Output Data:
-	- Calls the 'write_tsv()' function to write the updated DataFrame with primary IDs to a TSV file.
-	- Provides feedback to the user upon successful completion or error during file writing.
-
-""",
-        formatter_class=RawTextHelpFormatter,
-        usage=f"{script_name} <path_to_input_table> <path_to_output_table> [--min_pid_genome879 <threshold_pid>] [-h,--help]",
-    )
     parser.add_argument(
         "annotation_table",
         help="Path to the input annotation table as tsv",
@@ -123,15 +84,23 @@ This module is managed by a Makefile and depends on the merged annotation table 
         "output_table",
         help="Path to output annotation table with primary ID added",
     )
+    
+def setup_optional_args(parser: argparse.ArgumentParser) -> None:
+    """
+        Add optional arguments to the parser.
+    
+    Args:
+        parser (argparse.ArgumentParser): The argument parser object to add arguments to.
+
+    Returns:
+        None
+    """
     parser.add_argument(
         "--min_pid_genome879",
         type=float,
         default=97.0,
         help="Minimum threshold pid to consider Genome879.id in primary ID. Default is 97.0 PID.",
     )
-
-    return parser
-
 
 def read_tsv(annotation_table: str) -> pd.DataFrame:
     """
@@ -142,23 +111,29 @@ def read_tsv(annotation_table: str) -> pd.DataFrame:
 
     Returns:
         pd.DataFrame: The DataFrame read from the input file.
+    
+    Raises:
+        FileNotFoundError: If the input file is not found
+        pd.errors.EmptyDataError: If the DataFrame is empty
+        pd.errors.ParserError: If there's an error parsing the TSV file
     """
-    try:
-        print(
-            f"Attempting to read input annotation table '{os.path.basename(p=annotation_table)}'"
-        )
+    print(
+        f"Attempting to read input annotation table '{os.path.basename(p=annotation_table)}'"
+    )
 
+    try:
         df: pd.DataFrame = pd.read_csv(
             filepath_or_buffer=annotation_table,
             sep="\t",
         )
+        
         return df
 
     except FileNotFoundError:
         print(f"Error: File not found at '{annotation_table}'!")
         sys.exit(1)
     except pd.errors.EmptyDataError:
-        print(f"Error: DataFrame: '{annotation_table}' is empty")
+        print(f"Error: Problem reading DataFrame: '{annotation_table}' is empty")
         sys.exit(1)
     except pd.errors.ParserError:
         print(f"Error: There was an error parsing the TSV file: '{annotation_table}'.")
@@ -167,27 +142,29 @@ def read_tsv(annotation_table: str) -> pd.DataFrame:
 
 def clean_columns(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Clean up columns in the DataFrame to work with primary ID function -> make_primary_id().
+    Clean up columns in the DataFrame to work with primary ID function.
 
     Args:
         df (pd.DataFrame): DataFrame containing the input data.
 
     Returns:
         pd.DataFrame: The cleaned DataFrame.
+        
+    Raises:
+        ValueError: If required columns are missing or contain only NA values
+        pd.errors.EmptyDataError: If the DataFrame is empty.
     """
+    print("Cleaning columns...")
+
     try:
-        print("Cleaning columns...")
         if not df.empty or None:
-            required_headers: list[str] = [
+            required_headers: List[str] = [
                 "subcluster",
                 "cluster",
-                "MarineDiazo.description",
-                "MarineDiazo.subject",
                 "Genome879.pctId",
-                "UCYNAoligos.description",
                 "Genome879.tax",
             ]
-            missing_headers: list[str] = [
+            missing_headers: List[str] = [
                 col for col in required_headers if col not in df.columns
             ]
             # Check if there are any missing headers
@@ -198,27 +175,31 @@ def clean_columns(df: pd.DataFrame) -> pd.DataFrame:
                 )
 
             # Check if any required column is all NA values
-            columns_with_na_values: list[str] = [
+            columns_with_na_values: List[str] = [
                 col for col in required_headers if df[col].isna().all()
             ]
             if columns_with_na_values:
                 raise ValueError(
-                    f"The following required columns contain only NA values: {', '.join(columns_with_na_values)}"
+                    f"Columns contain only NA values: {', '.join(columns_with_na_values)}"
                 )
 
-                # Clean up columns
+            # Clean up columns
             df["subcluster"] = df["subcluster"].fillna(value="NA")
             df["cluster"] = (
                 df["cluster"]
-                .apply(lambda x: str(object=int(x)) if not pd.isna(x) else x)
-                .fillna(value="NA")
+                .apply(lambda x: str(object=int(x)) if not pd.isna(x) else "NA")
+                # .fillna(value="NA")
             )
             # Make new ID columns
-            df["MarineDiazo.id"] = (
-                df["MarineDiazo.description"] + ";" + df["MarineDiazo.subject"]
+            df["MarineDiazo.id"] = df.apply(
+                lambda row : f"{row['MarineDiazo.description']};{row['MarineDiazo.subject']}" 
+                if pd.notna(row["MarineDiazo.description"]) and pd.notna(row["MarineDiazo.subject"]) 
+                else pd.NA,
+                axis=1
             )
             df["UCYNAoligos.id"] = (
-                "UCYN-" + df["UCYNAoligos.description"].str.split("_").str[1]
+                df["UCYNAoligos.description"]
+                .apply(lambda x: f"UCYN-{x.split('_')[1]}" if pd.notna(x) else pd.NA)
             )
 
             return df
@@ -255,6 +236,9 @@ def make_primary_id(
 
     Returns:
         pd.DataFrame: The DataFrame with the primary ID added.
+    
+    Raises:
+        Exception: If an error occurs during primary ID creation.
     """
     try:
         print("Creating primary ID...")
@@ -275,10 +259,10 @@ def make_primary_id(
                     df.apply(
                         lambda row: (
                             "unknown" + row["subcluster"]
-                            if (not row["subcluster"] == "NA")
+                            if (row["subcluster"] != "NA")
                             else (
                                 "unknown" + row["cluster"]
-                                if (not row["cluster"] == "NA")
+                                if (row["cluster"] != "NA")
                                 else "unknown"
                             )
                         ),
@@ -305,8 +289,12 @@ def write_tsv(df: pd.DataFrame, output_path: str) -> bool:
     Args:
         df (pd.DataFrame): DataFrame to be written to the file.
         output_path (str): Path to the output file.
+    
     Returns:
-    Boolean. This value that is used in main() function to demonstrate the code has executed properly. If file is written, True is returned. If not file write, False is returned.
+        bool: True if file is written successfully, False otherwise
+    
+    Raises:
+        Exception: If an error occurs during file writing.
     """
     if not df.empty or None:
         try:
@@ -333,14 +321,54 @@ def main():
 
     Returns:
         None
+    
+    Raises:
+        argparse.ArgumentError: If there are unrecognized command-line arguments.
+        Exception: For any unexpected errors during script execution.
+        SystemExit: If an error occurs during execution
     """
-    # Set success flag to False
+    # General print statement to show script was called
+    print(f"{script_name} is currently running...")
+    
     success = False
 
     try:
-        parser: argparse.ArgumentParser = setup_argparse()
-        # args: argparse.Namespace = parser.parse_args()
-        # Parse the provided arguments
+        df: pd.DataFrame = read_tsv(annotation_table=args.annotation_table)
+        df = clean_columns(df=df)
+        df = make_primary_id(
+            df=df,
+            min_pid_genome879=args.min_pid_genome879,
+        )
+
+        success: bool = write_tsv(df=df, output_path=args.output_table)
+
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+
+    finally:
+        # success block with print statements
+        if success:
+            print(f"\nScript '{script_name}' executed successfully!")
+        else:
+            print(
+                f"""\nScript '{script_name}' exited with an error.
+No primary ID was made and no output was written! :(
+"""
+            )
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=RawTextHelpFormatter,
+        usage=f"{script_name} <path_to_input_table> <path_to_output_table> [--min_pid_genome879 <threshold_pid>] [-h,--help]",
+    )
+    
+    try:
+        # parser: argparse.ArgumentParser = setup_argparse()
+        setup_input_args(parser)
+        setup_optional_args(parser)
         args, unknown_args = parser.parse_known_args()
         # Check for any unknown arguments and raise an error if found
         if unknown_args:
@@ -363,34 +391,4 @@ def main():
         print(f"Failed to execute script: '{script_name}'.")
         sys.exit(11)
 
-    try:
-        df: pd.DataFrame = read_tsv(annotation_table=args.annotation_table)
-        if df is not df.empty:
-            df = clean_columns(df=df)
-            df = make_primary_id(
-                df=df,
-                min_pid_genome879=args.min_pid_genome879,
-            )
-
-            success: bool = write_tsv(df=df, output_path=args.output_table)
-
-    except Exception as e:
-        print(f"Error: {e}")
-        sys.exit(1)
-
-    finally:
-        # success block with print statements
-        if success:
-            print(f"\nScript '{script_name}' executed successfully!")
-        else:
-            print(
-                f"""\nScript '{script_name}' exited with an error.
-No primary ID was made and no output was written! :(
-"""
-            )
-
-
-# Conditional block ensures that the `main()` function is executed only when
-# called from the command line
-if __name__ == "__main__":
     main()
