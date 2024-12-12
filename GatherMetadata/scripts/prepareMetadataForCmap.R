@@ -45,13 +45,14 @@ needsFixin <- list()
 
 ##--------------------------------
 ##
-## Collection_Date: Copied this from gatherAsvs.R. Don't really need to *fix*
-## Collection_Dates but this script would seem incomplete if it did not try (and
-## if fixup is ever taken out of gatherAsvs.R...)
-##
-## However, LATER (once we have lat and lon) we do need to convert
-## to UTC and specific format for CMAP:
+## Collection_Date: Adapted from gatherAsvs.R. ISO 8601 date/times are handled a little
+## differently here: If they are UTC (with a Z at the end), drop the time part but note
+## which are UTC.  Later in this script (once we have lat and lon) we need to convert to
+## UTC for CMAP:
 ##     https://cmap.readthedocs.io/en/latest/user_guide/API_ref/pycmap_api/data_retrieval/pycmap_query.html
+## and we do not want to convert date/times that are already UTC.
+## Collection_Date's that are ISO 8601 with an offset other than Z cause an error.
+## Collection_Date's that are ISO 8601 with no offset are interpreted as local time.
 ##
 Announce('Collection_Date')
 
@@ -61,11 +62,24 @@ Announce('Collection_Date')
 ## by CMAP, but the UTC conversion happens to do that.
 Fixup_Collection_Date <- function(dates)
 {
+    reg.iso <- '20[0-9]{2}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}'  # with or without timezone
     reg.ymd <- '20[0-9]{2}-[0-9]{1,2}-[0-9]{1,2}'               # Wanted: 2016-5-19
     reg.mdy <- '[0-9]{1,2}[\\/\\.][0-9]{1,2}[\\/\\.][0-9]{2,4}' # Fixup these
 
-    ## First drop leading 0's for stuff that otherwise is in desired format.
-    idx <- grep(reg.ymd, dates)
+    ## ISO 8601 formatted date/times.
+    idx.iso <- grep(reg.iso, dates)
+    if (length(idx.iso) > 0) {
+        ## These must either be local time (no time zone at end) or UTC ("Z" at end).
+        if (!(all(grepl(paste0(reg.iso,"[Z]{0,1}$"), dates[idx.iso])))) {
+            stop("Some Collection_Dates appear to use ISO 8601 but are not UTC (Zulu offset) ",
+                 "nor are they local time (no offfset). We only handle UTC or local time.")
+        }
+        ## Drop the time part of ISO 8601 dates.
+        dates[idx.iso] <- sub('T[0-9]+:.*$', '', dates[idx.iso])
+    }
+    
+    ## Now drop leading 0's for stuff that otherwise is in desired format.
+    idx <- setdiff(grep(reg.ymd, dates), idx.iso)
     if (length(idx) > 0) {
         x <- as.character(lapply(strsplit(dates[idx],'-',T),
                  function(v) {
@@ -81,7 +95,7 @@ Fixup_Collection_Date <- function(dates)
         dates[idx] <- x
     }
 
-    idx <- grep(reg.mdy, dates)
+    idx <- setdiff(grep(reg.mdy, dates), idx.iso)
     if (length(idx) > 0) {
         x <- as.character(lapply(strsplit(dates[idx],'[\\/\\.]',F),
                  function(v) {
@@ -103,7 +117,6 @@ Fixup_Collection_Date <- function(dates)
     dates
 }
 
-
 coldates <- Fixup_Collection_Date(as.character(metadata$Collection_Date))
 ## Inelegant.  Use reg.ymd from the function to report failed conversions.
 reg.ymd <- '20[0-9]{2}-[0-9]{1,2}-[0-9]{1,2}'
@@ -120,11 +133,13 @@ if (length(idx) > 0) {
         "\n")
     rm(x)
 } else {
-    cat("Good news -- all Collection_Dates are in format YYYY-MM-DD")
+    cat("Good news -- all Collection_Dates are in format YYYY-MM-DD or ISO 8601 date/times")
 }
 
-## Commit the corrections.
+## Commit the corrections.  Note any UTC dates. (UTC, not just ISO 8601.)
 stopifnot(length(coldates) == nrow(metadata))
+reg.utc <- '^20[0-9]{2}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$'
+metadata$Collection_Date_is_UTC <- grepl(reg.utc, metadata$Collection_Date)
 metadata$Collection_Date <- factor(coldates)
 
 
@@ -168,13 +183,22 @@ cat("Checking Lat_Lon format. Although CMAP requires separate lat and lon\n",
     "in degrees N and E, we can use Lat_Lon to make those fields.\n")
 reg.lat_lon <- paste0('^[[:digit:]]+\\.*[[:digit:]]*',' +[NS]+ +',
                        '[[:digit:]]+\\.*[[:digit:]]*',' +[WE]+$')
+x <- colnames(metadata)
+if ((! 'lat_lon' %in% x) && ('Lat_Lon' %in% x)) {
+    cat("Renaming lat_lon to Lat_Lon.\n")
+    colnames(metadata) <- sub('^lat_lon$', 'Lat_Lon', x)
+}
 latlon <- as.character(metadata$Lat_Lon)
+stopifnot(length(latlon) > 0)
 idx <- grep(reg.lat_lon, latlon, invert=T)
-cat("Found",length(idx),"rows with Lat_Lon that does not follow the\n",
-    "format \"<posNum> [NS] <posNum> [WE]\".  These are the misformatted values:\n")
-cat("\t",paste(unique(latlon[idx]),collapse=', '),"\n\n")
-cat("For some studies the fix is simply to add the compass direction after verifying\n",
-    "that the degrees are correct for the study region.\n")
+cat("Found", length(idx), "rows with Lat_Lon that does not follow the",
+    "format \"<posNum> [NS] <posNum> [WE]\".\n")
+if (length(idx) > 0) {
+    cat("These are the misformatted values:\n")
+    cat("\t",paste(unique(latlon[idx]),collapse=', '),"\n\n")
+    cat("For some studies the fix is simply to add the compass direction after verifying\n",
+        "that the degrees are correct for the study region.\n")
+}
 needsFixin$Lat_Lon <- idx
 
 
@@ -227,7 +251,10 @@ Make_Alt_Lat_Lon <- function()
     stopifnot(length(x) == nrow(metadata))
     x
 }
-alt_lat_lon <- Make_Alt_Lat_Lon()
+alt_lat_lon <- rep(NA, nrow(metadata))
+if (all(c('Latitude', 'Longitude') %in% colnames(metadata))) {
+    alt_lat_lon <- Make_Alt_Lat_Lon()
+}
 
 ## Fixup *missing* values Lat_Lon (when we can, with alt_lat_lon). If there was
 ## a Lat_Lon specified but is has problems, this script will not try to figure
@@ -335,14 +362,19 @@ Announce('Local noon --> UTC datetimes')
 library(lutz)
 MakeLocalNoonsAsUtc <- function(mtab)
 {
-    stopifnot(c('Lat','Lon','Collection_Date') %in% colnames(mtab))
+    stopifnot(c('Lat','Lon','Collection_Date','Collection_Date_is_UTC') %in% colnames(mtab))
+    idx.UTC <- which(mtab$Collection_Date_is_UTC)
+
     ## Get time zones (or NA).  The 'accurate' method requires additional
     ## libraries.  'fast' will cause a warning to be issued about possibly
     ## inaccurate tz's near unpopulated areas. However, for meta*g*enomic
     ## samples being off by 1 hr should have ~no impact on CMAP modeled data.
     ## For metatranscriptomic samples 'accurate' would be better.
     tzones <- tz_lookup_coords(mtab$Lat, mtab$Lon, method='fast')
-    localNoons <- paste(mtab$Collection_Date,"12:00:00")
+    tzones[idx.UTC] <- "UTC"  # Override if already in UTC
+    
+    localNoons <- sub('T[0-9]+:.+$', '', mtab$Collection_Date)  # Drop "T..." if already UTC
+    localNoons <- paste(localNoons, "12:00:00")                 # Make it noon
     ## Magic based on:
     ##  https://blog.revolutionanalytics.com/2009/06/converting-time-zones.html
     ## Nicely this also makes the months and days have 2 digits (leading 0).
@@ -351,7 +383,7 @@ MakeLocalNoonsAsUtc <- function(mtab)
         if (!is.na(x)) { x <- format(as.POSIXct(localNoons[i], x), tz="GMT") }
         x
     })
-    utcDateTimes <- sub(' ','T',utcDateTimes)
+    utcDateTimes <- sub(' ', 'T', utcDateTimes)
     ## df <- data.frame(localNoons, tzones, utcDateTimes)  # for debugging
     utcDateTimes
 }
@@ -359,10 +391,12 @@ MakeLocalNoonsAsUtc <- function(mtab)
 
 cat("Adding column DateTimeUTC that has UTC time for noon at collection site and date.\n")
 cat("This step converts from the timezone implied by lat and lon.\n")
-cat("It tries to covert every Collection_Date.  If a Collection_Date needs fixing,\n",
+cat("It tries to convert every non-UTC Collection_Date to UTC.  If a Collection_Date needs fixing,\n",
     "I would not trust the conversion.\n")
-metadata$DateTimeUTC <- MakeLocalNoonsAsUtc(metadata[,c('Lat','Lon','Collection_Date')])
-
+x <- c('Lat','Lon','Collection_Date','Collection_Date_is_UTC')
+metadata$DateTimeUTC <- MakeLocalNoonsAsUtc(metadata[,x])
+x <- setdiff(colnames(metadata), 'Collection_Date_is_UTC')
+metadata <- metadata[,x]  # no longer need _is_UTC col
 
 ##--------------------------------
 ##
@@ -372,7 +406,7 @@ metadata$DateTimeUTC <- MakeLocalNoonsAsUtc(metadata[,c('Lat','Lon','Collection_
 ## Flag rows that had a bad value other than NA (which is easy enough
 ## to just look for in the row itself).
 tot <- c()
-for (fc in fieldsChecked) {
+for (fc in intersect(colnames(metadata), fieldsChecked)) {
     idx <- which(is.na(metadata[,fc]))
     idx <- setdiff( needsFixin[[fc]], idx )
     if (length(idx) > 0) {

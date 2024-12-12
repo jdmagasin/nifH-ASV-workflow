@@ -88,14 +88,19 @@ cat("\n")
 
 ## Fixup dates to be in format e.g. 2021-1-17.  Some examples of the formats
 ## fixed up:   1/7/21  1.7.21  1/07/21  1/17/2021
-## Not bullet proof.
+## Not bullet proof.  Don't fix up date-times that appear to follow ISO 8601.
 Fixup_Collection_Date <- function(dates)
 {
+    reg.iso <- '20[0-9]{2}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}'
     reg.ymd <- '20[0-9]{2}-[0-9]{1,2}-[0-9]{1,2}'               # Wanted: 2016-5-19
     reg.mdy <- '[0-9]{1,2}[\\/\\.][0-9]{1,2}[\\/\\.][0-9]{2,4}' # Fixup these
 
-    ## First drop leading 0's for stuff that otherwise is in desired format.
-    idx <- grep(reg.ymd, dates)
+    ## Do not touch dates that might be ISO 8601.  prepareMetadataForCmap.R will
+    ## check for those that are UTC (Z timezone) and _not_ convert them to UTC.
+    idx.iso <- grep(reg.iso, dates)
+    
+    ## Drop leading 0's for stuff that otherwise is in desired format.
+    idx <- setdiff(grep(reg.ymd, dates), idx.iso)
     if (length(idx) > 0) {
         x <- as.character(lapply(strsplit(dates[idx],'-',T),
                  function(v) {
@@ -111,7 +116,7 @@ Fixup_Collection_Date <- function(dates)
         dates[idx] <- x
     }
 
-    idx <- grep(reg.mdy, dates)
+    idx <- setdiff(grep(reg.mdy, dates), idx.iso)
     if (length(idx) > 0) {
         x <- as.character(lapply(strsplit(dates[idx],'[\\/\\.]',F),
                  function(v) {
@@ -240,8 +245,12 @@ rm(idx)
 ##lapply(metaList, function(m) m[1,'SAMPLEID'])
 
 cat("\n\nSaving metatranscriptomic_samples.txt which has the unmodified sample",
-    "IDs for metatranscriptomic samples.\n")
-writeLines(sort(gMetaT), "metatranscriptomic_samples.txt")
+    "IDs for", length(gMetaT), "metatranscriptomic samples.\n")
+if (length(gMetaT) > 0) {
+    writeLines(sort(gMetaT), "metatranscriptomic_samples.txt")
+} else {
+    writeLines("# There are no metatranscriptomic samples.", "metatranscriptomic_samples.txt")
+}
 
 ## grep for the fields we want, looping over the tables just loaded.
 x <- lapply(names(metaList),
