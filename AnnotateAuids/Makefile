@@ -12,7 +12,7 @@
 ##  4. Marine_NCD_cyano_refsequences
 ##                            - 223 nifH sequences from selected cyanobacteria
 ##                              and NCDs to provide increased resolution.
-##  5. UCYNA_oligoreps        - Forty-four UNCY-A oligotypes, thirty-eight from
+##  5. UCYNA_oligoreps        - Forty-four UCYN-A oligotypes, thirty-eight from
 ##                              metagenome assemblies, to provide increased
 ##                              resolution of UCYN-A ASVs.
 ##
@@ -20,17 +20,17 @@
 ## performs additional searches for the ASVs within the cyano / NCD DB and the
 ## UCYN-A oligos DB.  Annotations are then stitched together into a single table
 ## using scripts/makeAnnotationTable.R. Then a primary taxon ID is assigned to
-## each ASVs based on considering the accumulated annotations for each ASV, by
+## each ASV based on the accumulated annotations for each ASV, by
 ## scripts/make_primary_taxon_id.py, to create the final annotation table,
 ## auids.annot.tsv.
 ##
 ## Usage:
 ##    make                # Generate all annotation to make auids.annot.tsv
-##    make ARB2017        # Do just the blastn against ARB 2017
-##    make Genome879      # Do just the blastx against Genome879
-##    make Clusters       # Do just the nifH cluster classifications
-##    make NCD_cyano      # Do just the blastn against 267 NCD/cyano ref nifH
-##    make UCYNA_oligos   # Do just the blastn against UCYN-A nifh oligotypes
+##    make ARB2017        # Only blastn ARB 2017
+##    make Genome879      # Only blastx Genome879
+##    make Clusters       # Do only the nifH cluster classifications
+##    make NCD_cyano      # Only blastn 267 NCD/cyano reference nifH
+##    make UCYNA_oligos   # Only blastn UCYN-A nifh oligotypes
 ##    make CCAMP_check    # Check for paired cysteines that might coordinate the
 ##                          4Fe-4S cluster followed by AMP.
 ##
