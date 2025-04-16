@@ -149,15 +149,15 @@ cat("\n")
 if (!is.null(contamAsvs)) {
     AnnounceSection("Checking for contaminants")
     cat("Looking over contaminants in each study.\n")
-    ## Hack: Knows that the study is the first part of the sample name becuase
-    ## that is how we defined component 1 of the tags.
-    studies <- sapply(strsplit(colnames(atab),'\\.'), '[[', 1)
-    idx.C <- which(rownames(atab) %in% contamAsvs) # Big C
+    ## Hack: GatherAsvs's makeBigAbundTable.R formats the column names in the abund
+    ## table as <tags>___<sample name>.  Use the <tags> as the "study".
+    studies <- sapply(strsplit(colnames(atab),'___'), '[[', 1)
+    idx.C <- which(rownames(atab) %in% contamAsvs)           # Big C
     totsBefore <- c(reads=sum(atab), asvs=nrow(atab))
     for (sid in unique(studies)) {
-        idx.s <- which(studies == sid) # this study
-        x <- atab[,idx.s]
-        idx.c <- which(rowSums(x[idx.C,]) > 0)     # Little c
+        idx.s <- which(studies == sid)                       # This study
+        x <- atab[,idx.s, drop = F]
+        idx.c <- which(rowSums(x[idx.C,, drop = F]) > 0)     # Little c
         if (length(idx.c) > 0) {
             idx.c <- idx.C[idx.c]
             cat(paste0(round(100*sum(x[idx.c,]) / sum(x),1),"%"),
@@ -241,22 +241,22 @@ RecordSampleReadsAfterFilterStep("Drop rare ASVs", atab)
 if (!is.null(nifHlike)) {
     AnnounceSection("Applying previous results from NifH-like checker tool")
     cat("\nLooking over AUIDs in each study to see whether they are NifH-like.\n")
-    ## Hack: Knows that the study is the first part of the sample name becuase
-    ## that is how we defined component 1 of the tags.
-    studies <- sapply(strsplit(colnames(atab),'\\.'), '[[', 1)
+    ## Hack: GatherAsvs's makeBigAbundTable.R formats the column names in the abund
+    ## table as <tags>___<sample name>.  Use the <tags> as the "study".
+    studies <- sapply(strsplit(colnames(atab),'___'), '[[', 1)
     for (sid in unique(studies)) {
         cat(paste0("\n>>> ",sid,":\n"))
         idx.s <- which(studies == sid) # this study
-        x <- atab[,idx.s]
+        x <- atab[,idx.s, drop = F]
         idx.T <- intersect(rownames(x), nifHlike[['positives']])
-        if (all(colSums(x) == colSums(x[idx.T,]))) {
+        if (all(colSums(x) == colSums(x[idx.T,, drop = F]))) {
             ## For every sample, total reads equals total reads from +'s.
             cat("  + All AUIDs are NifH-like!\n")
         } else {
             stopifnot(rownames(x) == rownames(atab))
             for (typ in c('positives','unsure','negatives')) {
                 idx.T <- intersect(nifHlike[[typ]], rownames(atab))
-                idx.t <- which(rowSums(x[idx.T,]) > 0)
+                idx.t <- which(rowSums(x[idx.T,, drop = F]) > 0)
                 sym <- paste0("  ",c(positives="+",unsure="?",negatives="-")[typ])
                 if (length(idx.t) > 0) {
                     idx.t <- idx.T[idx.t]
