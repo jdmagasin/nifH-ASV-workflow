@@ -38,6 +38,7 @@ dependencies:
   - blast              =2.16.0 #  check_nifH_contaminants.sh, classifyNifH.sh, blast{nARB2017,xGenome879}.sh
   - biopython          =1.84   #  assignNifHclustersToNuclSeqs.sh
   - mafft              =7.526  #  assignNifHclustersToNuclSeqs.sh
+  - r-venn             =1.12   #  comparePipelineOutputs.R
 
   # External tools required by the ASV workflow
   #                             Needed by:
