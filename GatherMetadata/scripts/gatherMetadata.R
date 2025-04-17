@@ -98,7 +98,7 @@ Fixup_Collection_Date <- function(dates)
     ## Do not touch dates that might be ISO 8601.  prepareMetadataForCmap.R will
     ## check for those that are UTC (Z timezone) and _not_ convert them to UTC.
     idx.iso <- grep(reg.iso, dates)
-    
+
     ## Drop leading 0's for stuff that otherwise is in desired format.
     idx <- setdiff(grep(reg.ymd, dates), idx.iso)
     if (length(idx) > 0) {

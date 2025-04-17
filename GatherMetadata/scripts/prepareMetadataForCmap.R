@@ -72,12 +72,12 @@ Fixup_Collection_Date <- function(dates)
         ## These must either be local time (no time zone at end) or UTC ("Z" at end).
         if (!(all(grepl(paste0(reg.iso,"[Z]{0,1}$"), dates[idx.iso])))) {
             stop("Some Collection_Dates appear to use ISO 8601 but are not UTC (Zulu offset) ",
-                 "nor are they local time (no offfset). We only handle UTC or local time.")
+                 "nor are they local time (no offset). We only handle UTC or local time.")
         }
         ## Drop the time part of ISO 8601 dates.
         dates[idx.iso] <- sub('T[0-9]+:.*$', '', dates[idx.iso])
     }
-    
+
     ## Now drop leading 0's for stuff that otherwise is in desired format.
     idx <- setdiff(grep(reg.ymd, dates), idx.iso)
     if (length(idx) > 0) {
