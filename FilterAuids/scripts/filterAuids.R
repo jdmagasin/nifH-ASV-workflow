@@ -254,14 +254,14 @@ if (!is.null(nifHlike)) {
         idx.s <- which(studies == sid) # this study
         x <- atab[,idx.s, drop = F]
         idx.T <- intersect(rownames(x), nifHlike[['positives']])
-        if (all(colSums(x) == colSums(x[idx.T,, drop = F]))) {
+        if (all(colSums(x) == colSums(x[idx.T,, drop = F]))) {    # okay if idx.T is empty
             ## For every sample, total reads equals total reads from +'s.
             cat("  + All AUIDs are NifH-like!\n")
         } else {
             stopifnot(rownames(x) == rownames(atab))
             for (typ in c('positives','unsure','negatives')) {
                 idx.T <- intersect(nifHlike[[typ]], rownames(atab))
-                idx.t <- which(rowSums(x[idx.T,, drop = F]) > 0)
+                idx.t <- which(rowSums(x[idx.T,, drop = F]) > 0)  # okay if idx.T is empty
                 sym <- paste0("  ",c(positives="+",unsure="?",negatives="-")[typ])
                 if (length(idx.t) > 0) {
                     idx.t <- idx.T[idx.t]
