@@ -124,10 +124,15 @@ rm(aseqs) # currenly only need lengths
 contamAsvs <- NULL
 if (!is.na(contamBlastOut)) {
     cat("Loading results from contaminants check. ")
-    contamAsvs <- unique(subset(read.table(contamBlastOut),
-                                V3 >= CONTAM_PCTID & V4 >= CONTAM_ALEN)[,'V1'])
-    cat(length(contamAsvs), "AUIDs align at >=", CONTAM_PCTID, "%id and >=",
-         CONTAM_ALEN,"nt to contaminants.\n")
+    stopifnot(file.exists(contamBlastOut))
+    if (file.size(contamBlastOut) == 0) {
+        cat("There are no contaminants:  ", contamBlastOut, "is empty.\n")
+    } else {
+        contamAsvs <- unique(subset(contamAsvs, V3 >= CONTAM_PCTID & V4 >= CONTAM_ALEN)[,'V1'])
+        cat(length(contamAsvs), "AUIDs align at >=", CONTAM_PCTID, "%id and >=",
+            CONTAM_ALEN,"nt to contaminants.\n")
+        if (length(contamAsvs) == 0) { contamAsvs <-  NULL }
+    }
 }
 nifHlike <- NULL
 if (!is.na(nifHlikeCheckDir)) {
