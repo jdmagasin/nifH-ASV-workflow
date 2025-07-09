@@ -184,7 +184,7 @@ cat("Checking Lat_Lon format. Although CMAP requires separate lat and lon\n",
 reg.lat_lon <- paste0('^[[:digit:]]+\\.*[[:digit:]]*',' +[NS]+ +',
                        '[[:digit:]]+\\.*[[:digit:]]*',' +[WE]+$')
 x <- colnames(metadata)
-if ((! 'lat_lon' %in% x) && ('Lat_Lon' %in% x)) {
+if ((! 'Lat_Lon' %in% x) && ('lat_lon' %in% x)) {
     cat("Renaming lat_lon to Lat_Lon.\n")
     colnames(metadata) <- sub('^lat_lon$', 'Lat_Lon', x)
 }
@@ -315,7 +315,7 @@ check_clobber_coord <- function(oldvals,cnam)
         idx <- which(abs(oldvals - metadata[,cnam]) > 0.001)
         if (length(idx) > 0) {
             cat("The following",cnam,"'s got clobbered:\n")
-            df <- data.frame(metadata$SAMPLEID[idx], oldals[idx],
+            df <- data.frame(metadata$SAMPLEID[idx], oldvals[idx],
                              metadata$Lat[idx])
             colnames(df) <- c('SAMPLEID',
                               paste0(cnam,'.original'),
@@ -375,11 +375,12 @@ MakeLocalNoonsAsUtc <- function(mtab)
     
     localNoons <- sub('T[0-9]+:.+$', '', mtab$Collection_Date)  # Drop "T..." if already UTC
     localNoons <- paste(localNoons, "12:00:00")                 # Make it noon
+    localNoons[which(is.na(mtab$Collection_Date))] <- NA
     ## Magic based on:
     ##  https://blog.revolutionanalytics.com/2009/06/converting-time-zones.html
     ## Nicely this also makes the months and days have 2 digits (leading 0).
     utcDateTimes <- sapply(1:length(localNoons), function (i) {
-        x <- tzones[i]
+        x <- ifelse(is.na(localNoons[i]), NA, tzones[i])
         if (!is.na(x)) { x <- format(as.POSIXct(localNoons[i], x), tz="GMT") }
         x
     })

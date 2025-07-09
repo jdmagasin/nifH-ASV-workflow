@@ -19,9 +19,9 @@
 ##     could be a metagenomic sample with the same ID but without the suffix.)
 ##
 
-cat("Checking with match() whether AUID sample names (columns) can be looked up in metadata\n",
-     "SAMPLEIDs.  For this script use everything after the \"___\" in the AUID column\n",
-     "(i.e. drop the tags preceding the \"___\") as the sample name.\n\n")
+cat("Checking whether sample names (columns) in the AUID abundance table can be found in the\n",
+    "metadata SAMPLEIDs.  Will match everything after the \"___\" in the abundance column sample\n",
+    "names (i.e., will exclude the tags that precede \"___\") to the metadata SAMPLEIDs.\n")
 
 mSampIds <- read.table('metadata.csv', sep=',', header=T)$SAMPLEID
 stopifnot(!(table(mSampIds) > 1))

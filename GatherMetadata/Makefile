@@ -68,7 +68,7 @@ metadata.csv metatranscriptomic_samples.txt: studyID_metadata.csv
 	@scripts/gatherMetadata.R
 	@echo ; \
 	if [ -f ../GatherAsvs/asv2auid.abundances.tsv.gz ] ; then \
-	    echo '>>>>> Check mapping of AUID samples to metadata <<<<<' ; \
+	    echo '>>>>> Check mapping of sample names in abundance table to metadata <<<<<' ; \
 	    scripts/checkMapAuidTab2MetaTab.R ; \
 	fi
 	@echo ">>>>> Finished merging sample metadata tables <<<<<"
