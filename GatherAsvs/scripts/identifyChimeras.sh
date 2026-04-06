@@ -66,7 +66,7 @@ while read line ; do
     echo -e "#######################################\n" >> "$LOG"
     echo "## Checking for chimeras in $dsnam" >> "$LOG"
     echo "## Checking for chimeras in $dsnam"
-    command="$MYCHIMERASCRIPT $tsvpath $asvpath"
+    command="$MYCHIMERASCRIPT '${tsvpath}' '${asvpath}'"
     eval "$command" &>> "$LOG"
     mv nonchimera.fasta "${dsnam}.noChimera.fasta"
     rm chimera.fasta
