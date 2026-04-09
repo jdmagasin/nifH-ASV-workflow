@@ -87,8 +87,10 @@ Fixup_Collection_Date <- function(dates)
                      m <- as.numeric(v[2])
                      d <- as.numeric(v[3])
                      v <- paste0(v,collapse='-')
-                     if (y <= 2022 && m <= 12 && d <= 31) {
-                         v <- paste0(y,'-',m,'-',d)
+                     if (!any(is.na(c(y,m,d)))) {
+                         if (y <= 2099 && m <= 12 && d <= 31) {
+                             v <- paste0(y,'-',m,'-',d)
+                         }
                      }
                      v
                  }))
@@ -107,8 +109,10 @@ Fixup_Collection_Date <- function(dates)
                      m <- as.numeric(v[1])
                      d <- as.numeric(v[2])
                      v <- paste0(v,collapse='-') # might change the separator
-                     if (y <= 2022 && m <= 12 && d <= 31) {
-                         v <- paste0(y,'-',m,'-',d)
+                     if (!any(is.na(c(y,m,d)))) {
+                         if (y <= 2099 && m <= 12 && d <= 31) {
+                             v <- paste0(y,'-',m,'-',d)
+                         }
                      }
                      v
                  }))
@@ -117,10 +121,15 @@ Fixup_Collection_Date <- function(dates)
     dates
 }
 
+BadDates <- function(dates)
+{
+    reg.ymd <- '20[0-9]{2}-[0-9]{1,2}-[0-9]{1,2}'
+    grep(reg.ymd, dates, invert=T)
+}
+
 coldates <- Fixup_Collection_Date(as.character(metadata$Collection_Date))
 ## Inelegant.  Use reg.ymd from the function to report failed conversions.
-reg.ymd <- '20[0-9]{2}-[0-9]{1,2}-[0-9]{1,2}'
-idx <- grep(reg.ymd, coldates, invert=T)
+idx <- BadDates(coldates)
 if (length(idx) > 0) {
     cat(length(idx), "of the",length(coldates), "dates still need to be fixed.\n")
     cat("Here are unique date values that could not be converted to format YYYY-MM-DD:\n")
@@ -145,7 +154,7 @@ metadata$Collection_Date <- factor(coldates)
 
 ## Verify that what needs fixing is as determined above. Then record
 ## the rows in our "needs fixin'" mask.
-stopifnot(idx == grep(reg.ymd, metadata$Collection_Date, invert=T))
+stopifnot(idx == BadDates(metadata$Collection_Date))
 needsFixin$Collection_Date <- idx
 rm(idx,coldates)
 
@@ -273,7 +282,8 @@ if (length(idx) > 0) {
         "missing Lat_Lon using the corresponding Latitude and Longitude.\n")
     idx <- grep(reg.lat_lon, latlon, invert=T)
     needsFixin$Lat_Lon <- idx
-    cat("There are now",length(idx),"rows that need Lat_Lon to be fixed.\n")
+    cat("There are now",length(idx),"rows that need Lat_Lon to be fixed, from the",
+        "following studies:\n", paste(unique(metadata[idx,'StudyID'])), "\n")
 }
 
 
@@ -363,6 +373,11 @@ library(lutz)
 MakeLocalNoonsAsUtc <- function(mtab)
 {
     stopifnot(c('Lat','Lon','Collection_Date','Collection_Date_is_UTC') %in% colnames(mtab))
+    rownames(mtab) <- NULL  # so if remove bad dates the rownames will still index good dates
+    stopifnot(rownames(mtab) == 1:nrow(mtab))
+    retLen <- nrow(mtab)
+    idx.badDates <- BadDates(mtab$Collection_Date)
+    if (length(idx.badDates) > 0) { mtab <- mtab[-idx.badDates,] }
     idx.UTC <- which(mtab$Collection_Date_is_UTC)
 
     ## Get time zones (or NA).  The 'accurate' method requires additional
@@ -371,10 +386,10 @@ MakeLocalNoonsAsUtc <- function(mtab)
     ## samples being off by 1 hr should have ~no impact on CMAP modeled data.
     ## For metatranscriptomic samples 'accurate' would be better.
     tzones <- tz_lookup_coords(mtab$Lat, mtab$Lon, method='fast')
-    tzones[idx.UTC] <- "UTC"  # Override if already in UTC
+    if (length(idx.UTC) > 0) { tzones[idx.UTC] <- "UTC" } # Override if already in UTC
     
     localNoons <- sub('T[0-9]+:.+$', '', mtab$Collection_Date)  # Drop "T..." if already UTC
-    localNoons <- paste(localNoons, "12:00:00")                 # Make it noon
+    localNoons <- paste(localNoons, "12:00:00")                  # Make it noon
     localNoons[which(is.na(mtab$Collection_Date))] <- NA
     ## Magic based on:
     ##  https://blog.revolutionanalytics.com/2009/06/converting-time-zones.html
@@ -386,7 +401,10 @@ MakeLocalNoonsAsUtc <- function(mtab)
     })
     utcDateTimes <- sub(' ', 'T', utcDateTimes)
     ## df <- data.frame(localNoons, tzones, utcDateTimes)  # for debugging
-    utcDateTimes
+    rval <- rep(NA, retLen)
+    rval[as.integer(rownames(mtab))] <- utcDateTimes  # rownames index the good dates
+    stopifnot(idx.badDates %in% which(is.na(rval)))
+    rval
 }
 
 

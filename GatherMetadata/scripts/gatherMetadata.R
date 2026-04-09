@@ -108,8 +108,10 @@ Fixup_Collection_Date <- function(dates)
                      m <- as.numeric(v[2])
                      d <- as.numeric(v[3])
                      v <- paste0(v,collapse='-')
-                     if (y <= 2022 && m <= 12 && d <= 31) {
-                         v <- paste0(y,'-',m,'-',d)
+                     if (!any(is.na(c(y,m,d)))) {
+                         if (y <= 2099 && m <= 12 && d <= 31) {
+                             v <- paste0(y,'-',m,'-',d)
+                         }
                      }
                      v
                  }))
@@ -128,8 +130,10 @@ Fixup_Collection_Date <- function(dates)
                      m <- as.numeric(v[1])
                      d <- as.numeric(v[2])
                      v <- paste0(v,collapse='-') # might change the separator
-                     if (y <= 2022 && m <= 12 && d <= 31) {
-                         v <- paste0(y,'-',m,'-',d)
+                     if (!any(is.na(c(y,m,d)))) {
+                         if (y <= 2099 && m <= 12 && d <= 31) {
+                             v <- paste0(y,'-',m,'-',d)
+                         }
                      }
                      v
                  }))
@@ -203,7 +207,7 @@ ReadMetaTable <- function(fp)
         cat("Ignoring",fp,"\n")
         return(NULL)
     }
-    if (!all(dim(mdat) > c(1,1))) {
+    if (!all(dim(mdat) >= c(1,1))) {
         stop("What kind of table is ",fp,"?  As loaded it has ~no rows/cols.\n")
     }
     mdat <- HackHandleProblemSamples(mdat)
