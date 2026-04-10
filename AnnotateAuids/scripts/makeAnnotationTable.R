@@ -64,9 +64,9 @@ LoadAnnotTable <- function(fname, cols)
         cat("This file is empty.\n")
         df <- MakeEmptyFrame(cols)
     } else if (grepl("\\.(map|csv)$", fname)) {
-        df <- read.csv(fname, col.names = cols)
+        df <- read.csv(fname, col.names = cols, comment.char='#')
     } else {
-        df <- read.table(fname, col.names = cols)
+        df <- read.table(fname, col.names = cols, comment.char='#')
     }
     cat("okay, loaded", paste(dim(df), collapse = " by "), "table.\n")
     df
