@@ -108,6 +108,10 @@ def read_input_file(input_path: str) -> pd.DataFrame | None:
             # Print out the expected data types and the start of the validation process
             print(f"Expecting {expected_types}")
             print("Validating the data type of the values of these columns...")
+            # CMAP expects 'time' to be valid UTC, which GatherMetadata tries to provide.
+            # Set to NaN any invalid or missing times so the loop below will detect.
+            timeFmt = "%Y-%m-%dT%H:%M:%S"
+            df.time = pd.to_datetime(df.time, format=timeFmt, errors='coerce').dt.strftime(timeFmt)
             # Initialize lists to store:
             # valid rows
             # count of removed rows
@@ -119,21 +123,23 @@ def read_input_file(input_path: str) -> pd.DataFrame | None:
                 valid_row = True
                 # Loop through each column and its expected data type
                 for column, data_type in expected_types.items():
+                    # If this column's value is undefined or the wrong type, remove the row.
+                    # Check undefined first because str(NaN) --> "nan" which is defined.
                     try:
-                        # Attempt to convert the value in the row to the
-                        # expected data type
+                        if pd.isna(row[column]):
+                            raise ValueError
                         row[column] = data_type(row[column])
-                    # If conversion fails, print ValueError message then..
                     except ValueError:
                         print(
-                            f"Row {index}: Value '{row[column]}' in column '{column}' is not convertible to {data_type.__name__}, removing row..."
+                            f"Removing row {index} ({row.iloc[0]}) because '{column}' is either",
+                            f"missing or not type {data_type.__name__}."
                         )
                         # Mark row as invalid
                         valid_row = False
                         # Break out of inner loop because we don't want this
                         # row anymore
                         break
-                # If the row is valid after all columns are evaluated, add it to the list of valid rows
+                # If all columns have the right type and are defined, then keep this row.
                 if valid_row:
                     valid_rows.append(row)
                 # If the row is invalid, increment the count of removed rows
@@ -142,7 +148,7 @@ def read_input_file(input_path: str) -> pd.DataFrame | None:
                     rows_removed_count += 1
             # Print to indicate how many rows were removed
             print(
-                f"Total number of rows REMOVED that could not be converted: {rows_removed_count}"
+                f"Total number of rows REMOVED due to fields that are undefined or the wrong type: {rows_removed_count}"
             )
             # Create a new DataFrame containing only the valid rows
             # the index needs to be reset or downstream concatenation fail
